@@ -1,0 +1,116 @@
+// VividWalls / WallpaperX — Prisma schema
+// Foundation: the attached schema.sql (wallpapers + favorites).
+// Extensions required by the frontend:
+//   - User model (registration / auth / profile)
+//   - Favorites & Downloads are per-user (the reference favorites table was global)
+//   - Category promoted from a string column to its own table (name + icon + count)
+//   - Additive wallpaper fields for the Home screen: isFeatured, likes, downloadCount
+//
+// Table/column names are mapped to snake_case so the physical schema stays
+// consistent with the SQL style in the reference file.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// User — auth + profile
+// ---------------------------------------------------------------------------
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  username     String
+  passwordHash String   @map("password_hash")
+  avatarUrl    String?  @map("avatar_url")
+  bio          String?
+  isPremium    Boolean  @default(false) @map("is_premium")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  favorites Favorite[]
+  downloads Download[]
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Category — normalized from the reference's `category VARCHAR` column
+// ---------------------------------------------------------------------------
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  slug      String   @unique
+  icon      String? // Ionicons name consumed by the RN frontend (e.g. "leaf-outline")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  wallpapers Wallpaper[]
+
+  @@map("categories")
+}
+
+// ---------------------------------------------------------------------------
+// Wallpaper — faithful to the reference, plus Home-screen fields
+// ---------------------------------------------------------------------------
+model Wallpaper {
+  id            String   @id @default(uuid()) @db.Uuid
+  title         String
+  videoUrl      String   @map("video_url")
+  thumbnailUrl  String?  @map("thumbnail_url")
+  resolution    String   @default("1080p")
+  isFeatured    Boolean  @default(false) @map("is_featured")
+  likes         Int      @default(0)
+  downloadCount Int      @default(0) @map("download_count")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  categoryId String   @map("category_id") @db.Uuid
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  favorites Favorite[]
+  downloads Download[]
+
+  @@index([categoryId])
+  @@index([title])
+  @@index([isFeatured])
+  @@map("wallpapers")
+}
+
+// ---------------------------------------------------------------------------
+// Favorite — now scoped to a user (reference table was global)
+// ---------------------------------------------------------------------------
+model Favorite {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  wallpaperId String   @map("wallpaper_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallpaper Wallpaper @relation(fields: [wallpaperId], references: [id], onDelete: Cascade)
+
+  // A user can favorite a given wallpaper only once
+  @@unique([userId, wallpaperId])
+  @@index([userId])
+  @@index([wallpaperId])
+  @@map("favorites")
+}
+
+// ---------------------------------------------------------------------------
+// Download — tracks each download event for a user
+// ---------------------------------------------------------------------------
+model Download {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  wallpaperId String   @map("wallpaper_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallpaper Wallpaper @relation(fields: [wallpaperId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([wallpaperId])
+  @@map("downloads")
+}
