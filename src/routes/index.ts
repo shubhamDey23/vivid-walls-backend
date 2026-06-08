@@ -5,6 +5,8 @@ import wallpaperRoutes from './wallpaper.routes';
 import categoryRoutes from './category.routes';
 import favoriteRoutes from './favorite.routes';
 import downloadRoutes from './download.routes';
+import likeRoutes from './like.routes';
+import subscriptionRoutes from './subscription.routes';
 
 const router = Router();
 
@@ -19,5 +21,7 @@ router.use('/wallpapers', wallpaperRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/favorites', favoriteRoutes);
 router.use('/downloads', downloadRoutes);
+router.use('/likes', likeRoutes);
+router.use('/subscriptions', subscriptionRoutes);
 
 export default router;

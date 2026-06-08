@@ -1,113 +1,435 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import "dotenv/config";
 
-const prisma = new PrismaClient();
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import bcrypt from "bcryptjs";
 
-/** Categories mirror the ones used by the React Native frontend. */
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+
+const prisma = new PrismaClient({
+  adapter,
+});
+
+
+const img = (seed: string) =>
+  `https://picsum.photos/seed/${seed}/800/1400`;
+
+
 const CATEGORIES = [
-  { name: 'Anime', slug: 'anime', icon: 'happy-outline' },
-  { name: 'Sports', slug: 'sports', icon: 'football-outline' },
-  { name: 'Nature', slug: 'nature', icon: 'leaf-outline' },
-  { name: 'Cars', slug: 'cars', icon: 'car-sport-outline' },
-  { name: 'Abstract', slug: 'abstract', icon: 'color-palette-outline' },
-  { name: 'City', slug: 'city', icon: 'business-outline' },
-  { name: 'Space', slug: 'space', icon: 'planet-outline' },
-  { name: 'Minimal', slug: 'minimal', icon: 'ellipsis-horizontal-circle-outline' },
-  { name: 'Typography', slug: 'typography', icon: 'text-outline' },
-  { name: 'Art', slug: 'art', icon: 'brush-outline' },
-  { name: 'Gaming', slug: 'gaming', icon: 'game-controller-outline' },
-  { name: 'Animals', slug: 'animals', icon: 'paw-outline' },
+  {
+    name: "Anime",
+    slug: "anime",
+    icon: "happy-outline",
+  },
+  {
+    name: "Sports",
+    slug: "sports",
+    icon: "football-outline",
+  },
+  {
+    name: "Nature",
+    slug: "nature",
+    icon: "leaf-outline",
+  },
+  {
+    name: "Cars",
+    slug: "cars",
+    icon: "car-sport-outline",
+  },
+  {
+    name: "Abstract",
+    slug: "abstract",
+    icon: "color-palette-outline",
+  },
+  {
+    name: "City",
+    slug: "city",
+    icon: "business-outline",
+  },
+  {
+    name: "Space",
+    slug: "space",
+    icon: "planet-outline",
+  },
+  {
+    name: "Gaming",
+    slug: "gaming",
+    icon: "game-controller-outline",
+  },
+  {
+    name: "Animals",
+    slug: "animals",
+    icon: "paw-outline",
+  },
 ];
 
-const img = (seed: string) => `https://picsum.photos/seed/${seed}/800/1200`;
 
-/** A handful of wallpapers spread across categories. */
-const WALLPAPERS: Array<{
-  title: string;
-  categorySlug: string;
-  thumb: string;
-  resolution: string;
-  isFeatured: boolean;
-  likes: number;
-  downloadCount: number;
-}> = [
-  { title: 'Majestic Lion', categorySlug: 'animals', thumb: 'wx-lion', resolution: '3840x2160', isFeatured: true, likes: 12500, downloadCount: 4200 },
-  { title: 'Alpine Mirror', categorySlug: 'nature', thumb: 'wx-alps', resolution: '3840x2160', isFeatured: true, likes: 9800, downloadCount: 3100 },
-  { title: 'Neon Avenue', categorySlug: 'city', thumb: 'wx-neon', resolution: '1920x1080', isFeatured: true, likes: 11200, downloadCount: 5300 },
-  { title: 'Deep Field', categorySlug: 'space', thumb: 'wx-space', resolution: '3840x2160', isFeatured: false, likes: 7400, downloadCount: 2200 },
-  { title: 'Liquid Aura', categorySlug: 'abstract', thumb: 'wx-aura', resolution: '1920x1080', isFeatured: false, likes: 6100, downloadCount: 1800 },
-  { title: 'Sakura Pagoda', categorySlug: 'nature', thumb: 'wx-sakura', resolution: '1920x1080', isFeatured: false, likes: 8700, downloadCount: 2600 },
-  { title: 'Sea Turtle', categorySlug: 'animals', thumb: 'wx-turtle', resolution: '1920x1080', isFeatured: false, likes: 7100, downloadCount: 1900 },
-  { title: 'Rainy Downtown', categorySlug: 'city', thumb: 'wx-citynight', resolution: '3840x2160', isFeatured: false, likes: 6400, downloadCount: 2100 },
-  { title: 'Super Saiyan', categorySlug: 'anime', thumb: 'wx-anime', resolution: '1920x1080', isFeatured: true, likes: 15200, downloadCount: 8800 },
-  { title: 'Midnight Racer', categorySlug: 'cars', thumb: 'wx-cars', resolution: '3840x2160', isFeatured: false, likes: 9300, downloadCount: 4100 },
-  { title: 'Stadium Lights', categorySlug: 'sports', thumb: 'wx-sports', resolution: '1920x1080', isFeatured: false, likes: 5200, downloadCount: 1500 },
-  { title: 'Floating Sphere', categorySlug: 'minimal', thumb: 'wx-minimal', resolution: '1920x1080', isFeatured: false, likes: 4300, downloadCount: 1200 },
+const WALLPAPERS = [
+
+  {
+    title: "Majestic Lion",
+    category: "animals",
+    seed: "lion",
+    premium: true,
+    featured: true,
+    likes: 12500
+  },
+
+
+  {
+    title: "Cyber Samurai",
+    category: "anime",
+    seed: "samurai",
+    premium: true,
+    featured: true,
+    likes: 15200
+  },
+
+
+  {
+    title: "Alpine Mirror",
+    category: "nature",
+    seed: "nature",
+    premium: false,
+    featured: true,
+    likes: 9800
+  },
+
+
+  {
+    title: "Galaxy Dream",
+    category: "space",
+    seed: "space",
+    premium: true,
+    featured: false,
+    likes: 11300
+  },
+
+
+  {
+    title: "Neon Racer",
+    category: "cars",
+    seed: "car",
+    premium: false,
+    featured: false,
+    likes: 7600
+  },
+
+
+  {
+    title: "Liquid Aura",
+    category: "abstract",
+    seed: "abstract",
+    premium: false,
+    featured: false,
+    likes: 6100
+  },
+
+
+  {
+    title: "Gaming Warrior",
+    category: "gaming",
+    seed: "gaming",
+    premium: true,
+    featured: false,
+    likes: 8900
+  }
+
 ];
+
 
 async function main() {
-  console.log('🌱 Seeding database...');
 
-  // 1. Categories (idempotent upsert by unique slug)
-  const categoryBySlug = new Map<string, string>();
-  for (const c of CATEGORIES) {
-    const category = await prisma.category.upsert({
-      where: { slug: c.slug },
-      update: { name: c.name, icon: c.icon },
-      create: c,
+
+  console.log("🌱 Start seed");
+
+
+  //
+  // CLEAR DATA
+  //
+
+  await prisma.subscription.deleteMany();
+
+  await prisma.wallpaperLike.deleteMany();
+
+  await prisma.download.deleteMany();
+
+  await prisma.favorite.deleteMany();
+
+  await prisma.wallpaper.deleteMany();
+
+  await prisma.category.deleteMany();
+
+  await prisma.user.deleteMany();
+
+
+
+  //
+  // USER
+  //
+
+  const user =
+    await prisma.user.create({
+
+      data: {
+
+        email: "demo@vividwalls.app",
+
+        username: "Ethan Hunt",
+
+        passwordHash:
+          await bcrypt.hash(
+            "Password123",
+            10
+          ),
+
+        bio:
+          "Wallpaper lover ✨",
+
+        avatarUrl:
+          img("avatar"),
+
+        isPremium: true,
+
+        premiumUntil:
+          new Date(
+            Date.now()
+            +
+            1000 * 60 * 60 * 24 * 365
+          )
+
+      }
+
     });
-    categoryBySlug.set(c.slug, category.id);
-  }
-  console.log(`   ✓ ${CATEGORIES.length} categories`);
 
-  // 2. Wallpapers — only seed when the table is empty to avoid duplicates
-  const existingCount = await prisma.wallpaper.count();
-  if (existingCount === 0) {
-    for (const w of WALLPAPERS) {
-      const categoryId = categoryBySlug.get(w.categorySlug);
-      if (!categoryId) continue;
-      await prisma.wallpaper.create({
-        data: {
-          title: w.title,
-          videoUrl: img(w.thumb), // placeholder media URL
-          thumbnailUrl: img(w.thumb),
-          resolution: w.resolution,
-          isFeatured: w.isFeatured,
-          likes: w.likes,
-          downloadCount: w.downloadCount,
-          categoryId,
-        },
+
+  //
+  // CATEGORY
+  //
+
+  const categoryMap =
+    new Map<string, string>();
+
+
+  for (const c of CATEGORIES) {
+
+
+    const category =
+      await prisma.category.create({
+
+        data: c
+
       });
-    }
-    console.log(`   ✓ ${WALLPAPERS.length} wallpapers`);
-  } else {
-    console.log(`   • ${existingCount} wallpapers already present, skipping`);
+
+
+    categoryMap.set(
+      c.slug,
+      category.id
+    );
+
+
   }
 
-  // 3. Demo user — login with demo@vividwalls.app / Password123
-  const passwordHash = await bcrypt.hash('Password123', 10);
-  await prisma.user.upsert({
-    where: { email: 'demo@vividwalls.app' },
-    update: {},
-    create: {
-      email: 'demo@vividwalls.app',
-      username: 'Ethan Hunt',
-      passwordHash,
-      bio: 'Wallpaper lover and explorer ✨',
-      isPremium: true,
-      avatarUrl: img('wx-avatar'),
-    },
-  });
-  console.log('   ✓ demo user (demo@vividwalls.app / Password123)');
 
-  console.log('✅ Seed complete.');
+
+  //
+  // WALLPAPER
+  //
+
+  const created: any[] = [];
+
+
+  for (const w of WALLPAPERS) {
+
+
+    const wallpaper =
+      await prisma.wallpaper.create({
+
+        data: {
+
+          title: w.title,
+
+
+          description:
+            "Premium HD wallpaper",
+
+
+          imageUrl:
+            img(w.seed),
+
+
+          thumbnailUrl:
+            img(w.seed),
+
+
+          quality:
+            w.premium
+              ?
+              "8K"
+              :
+              "4K",
+
+
+          resolution:
+            w.premium
+              ?
+              "7680x4320"
+              :
+              "3840x2160",
+
+
+          isPremium:
+            w.premium,
+
+
+          isFeatured:
+            w.featured,
+
+
+          likes:
+            w.likes,
+
+
+          downloadCount:
+            Math.floor(
+              Math.random() * 9000
+            ),
+
+
+          categoryId:
+            categoryMap.get(w.category)!
+
+        }
+
+      });
+
+
+    created.push(wallpaper);
+
+
+  }
+
+
+
+  //
+  // FAVORITES
+  //
+
+  await prisma.favorite.createMany({
+
+    data: [
+
+      {
+        userId: user.id,
+        wallpaperId: created[0].id
+      },
+
+      {
+        userId: user.id,
+        wallpaperId: created[2].id
+      }
+
+    ]
+
+  });
+
+
+  //
+  // LIKES
+  //
+
+  await prisma.wallpaperLike.create({
+
+    data: {
+
+      userId: user.id,
+
+      wallpaperId: created[0].id
+
+    }
+
+  });
+
+
+  //
+  // DOWNLOAD HISTORY
+  //
+
+  await prisma.download.createMany({
+
+    data: [
+
+      {
+        userId: user.id,
+        wallpaperId: created[0].id,
+        quality: "8K"
+      },
+
+      {
+        userId: user.id,
+        wallpaperId: created[2].id,
+        quality: "4K"
+      }
+
+    ]
+
+  });
+
+
+  //
+  // PREMIUM SUBSCRIPTION
+  //
+
+  await prisma.subscription.create({
+
+    data: {
+
+      userId: user.id,
+
+      plan: "annual",
+
+      platform: "android",
+
+      purchaseToken:
+        "demo-token",
+
+      startDate: new Date(),
+
+      endDate:
+        new Date(
+          Date.now()
+          +
+          1000 * 60 * 60 * 24 * 365
+        ),
+
+      active: true
+
+    }
+
+  });
+
+
+  console.log("✅ Seed completed");
+
+
 }
 
+
+
 main()
-  .catch((e) => {
-    console.error('❌ Seed failed:', e);
+  .catch(e => {
+
+    console.error(e);
+
     process.exit(1);
+
   })
   .finally(async () => {
+
     await prisma.$disconnect();
+
   });
