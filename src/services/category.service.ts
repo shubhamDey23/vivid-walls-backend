@@ -6,43 +6,168 @@ const withCategory = {
 };
 
 export const categoryService = {
-  /** All categories with a live wallpaper count (for the Category grid). */
+
+
   async list() {
-    const categories = await prisma.category.findMany({
-      orderBy: { name: 'asc' },
-      include: { _count: { select: { wallpapers: true } } },
-    });
+
+
+    const categories =
+      await prisma.category.findMany({
+
+        orderBy: {
+          name: "asc"
+        },
+
+
+        include: {
+
+          _count: {
+
+            select: {
+              wallpapers: true
+            }
+
+          }
+
+        }
+
+
+      });
+
+
+
     return categories.map((c) => ({
+
+
       id: c.id,
+
+
       name: c.name,
+
+
       slug: c.slug,
+
+
       icon: c.icon,
-      count: c._count.wallpapers,
+
+
+      createdAt: c.createdAt,
+
+
+      count: c._count.wallpapers
+
+
     }));
+
+
   },
+
+
+
+
 
   async getBySlug(slug: string) {
-    const category = await prisma.category.findUnique({ where: { slug } });
-    if (!category) throw ApiError.notFound(`Category '${slug}' not found`);
+
+
+    const category =
+      await prisma.category.findUnique({
+
+        where: {
+          slug
+        }
+
+      });
+
+
+
+    if (!category) {
+
+      throw ApiError.notFound(
+        `Category '${slug}' not found`
+      );
+
+    }
+
+
+
     return category;
+
+
   },
 
-  /** Paginated wallpapers belonging to one category. */
-  async getWallpapers(slug: string, limit: number, offset: number) {
-    const category = await this.getBySlug(slug);
-    const where = { categoryId: category.id };
 
-    const [items, total] = await Promise.all([
-      prisma.wallpaper.findMany({
-        where,
-        include: withCategory,
-        orderBy: { createdAt: 'desc' },
-        skip: offset,
-        take: limit,
-      }),
-      prisma.wallpaper.count({ where }),
-    ]);
 
-    return { category, items, total };
-  },
+
+
+  async getWallpapers(
+    slug: string,
+    limit: number,
+    offset: number
+  ) {
+
+
+
+    const category =
+      await this.getBySlug(slug);
+
+
+
+    const where = {
+
+      categoryId:
+        category.id
+
+    };
+
+
+
+
+    const [items, total] =
+      await Promise.all([
+
+
+        prisma.wallpaper.findMany({
+
+          where,
+
+          include: withCategory,
+
+          orderBy: {
+            createdAt: "desc"
+          },
+
+          skip: offset,
+
+          take: limit
+
+
+        }),
+
+
+
+
+        prisma.wallpaper.count({
+          where
+        })
+
+
+      ]);
+
+
+
+
+    return {
+
+      category,
+
+      items,
+
+      total
+
+    };
+
+
+  }
+
+
 };

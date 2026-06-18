@@ -79,6 +79,14 @@ const WALLPAPERS = [
     likes: 12500
   },
 
+  {
+    title: "Wolf Moon",
+    category: "animals",
+    seed: "wolf",
+    premium: false,
+    featured: false,
+    likes: 5600
+  },
 
   {
     title: "Cyber Samurai",
@@ -89,46 +97,122 @@ const WALLPAPERS = [
     likes: 15200
   },
 
+  {
+    title: "Anime Warrior",
+    category: "anime",
+    seed: "anime-warrior",
+    premium: false,
+    featured: false,
+    likes: 8200
+  },
+
+  {
+    title: "Galaxy Dream",
+    category: "space",
+    seed: "galaxy",
+    premium: true,
+    featured: true,
+    likes: 22000
+  },
+
+  {
+    title: "Mars Explorer",
+    category: "space",
+    seed: "mars",
+    premium: false,
+    featured: false,
+    likes: 7300
+  },
 
   {
     title: "Alpine Mirror",
     category: "nature",
-    seed: "nature",
+    seed: "mountain",
     premium: false,
     featured: true,
     likes: 9800
   },
 
-
   {
-    title: "Galaxy Dream",
-    category: "space",
-    seed: "space",
+    title: "Rain Forest",
+    category: "nature",
+    seed: "forest",
     premium: true,
     featured: false,
-    likes: 11300
+    likes: 11200
   },
-
 
   {
     title: "Neon Racer",
     category: "cars",
-    seed: "car",
+    seed: "sport-car",
     premium: false,
-    featured: false,
+    featured: true,
     likes: 7600
   },
 
+  {
+    title: "Luxury Beast",
+    category: "cars",
+    seed: "supercar",
+    premium: true,
+    featured: false,
+    likes: 16500
+  },
+
+  {
+    title: "Football Arena",
+    category: "sports",
+    seed: "football",
+    premium: false,
+    featured: false,
+    likes: 6500
+  },
+
+  {
+    title: "Basketball Fire",
+    category: "sports",
+    seed: "basketball",
+    premium: true,
+    featured: false,
+    likes: 8700
+  },
 
   {
     title: "Liquid Aura",
     category: "abstract",
     seed: "abstract",
     premium: false,
-    featured: false,
+    featured: true,
     likes: 6100
   },
 
+  {
+    title: "Dark Waves",
+    category: "abstract",
+    seed: "dark-wave",
+    premium: true,
+    featured: false,
+    likes: 9400
+  },
+
+  {
+    title: "Tokyo Night",
+    category: "city",
+    seed: "tokyo",
+    premium: true,
+    featured: true,
+    likes: 19000
+  },
+
+  {
+    title: "New York Lights",
+    category: "city",
+    seed: "newyork",
+    premium: false,
+    featured: false,
+    likes: 7800
+  },
 
   {
     title: "Gaming Warrior",
@@ -137,6 +221,15 @@ const WALLPAPERS = [
     premium: true,
     featured: false,
     likes: 8900
+  },
+
+  {
+    title: "Cyber Controller",
+    category: "gaming",
+    seed: "controller",
+    premium: false,
+    featured: false,
+    likes: 4300
   }
 
 ];
@@ -166,20 +259,81 @@ async function main() {
 
   await prisma.user.deleteMany();
 
+  await prisma.role.deleteMany();
+
+
+
 
 
   //
-  // USER
+  // ROLES
   //
+
+  const adminRole = await prisma.role.create({
+
+    data: {
+      name: "ADMIN"
+    }
+
+  });
+
+
+  const userRole = await prisma.role.create({
+
+    data: {
+      name: "USER"
+    }
+
+  });
+
+
+  //
+  // USERS
+  //
+
+  const admin =
+    await prisma.user.create({
+
+      data: {
+
+        email: "admin@vividwalls.app",
+
+        username: "Admin",
+
+        passwordHash:
+          await bcrypt.hash(
+            "Admin123",
+            10
+          ),
+
+        avatarUrl:
+          img("admin"),
+
+        bio:
+          "Application administrator",
+
+        isPremium: true,
+
+
+        roleId:
+          adminRole.id
+
+      }
+
+    });
+
+
 
   const user =
     await prisma.user.create({
 
       data: {
 
-        email: "demo@vividwalls.app",
+        email:
+          "demo@vividwalls.app",
 
-        username: "Ethan Hunt",
+        username:
+          "Ethan Hunt",
 
         passwordHash:
           await bcrypt.hash(
@@ -195,12 +349,17 @@ async function main() {
 
         isPremium: true,
 
+
         premiumUntil:
           new Date(
             Date.now()
             +
             1000 * 60 * 60 * 24 * 365
-          )
+          ),
+
+
+        roleId:
+          userRole.id
 
       }
 

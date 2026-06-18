@@ -1,7 +1,12 @@
 import prisma from '../config/prisma';
 import { ApiError } from '../utils/ApiError';
 
+
+
+
+
 export const userService = {
+
   /** Profile + aggregate stats shown on the Profile screen. */
   async getProfile(userId: string) {
     const user = await prisma.user.findUnique({
@@ -27,4 +32,6 @@ export const userService = {
       },
     };
   },
+
+
 };

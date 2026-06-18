@@ -8,4 +8,6 @@ export const userController = {
     const profile = await userService.getProfile(req.user!.id);
     sendSuccess(res, profile);
   },
+
+
 };

@@ -26,16 +26,58 @@ model User {
 
   lastDownloadReset DateTime? @map("last_download_reset")
 
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  roleId String? @map("role_id") @db.Uuid
 
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  role Role? @relation(fields: [roleId], references: [id], onDelete: SetNull)
 
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
   favorites     Favorite[]
   downloads     Download[]
   likes         WallpaperLike[]
   subscriptions Subscription[]
+  sessions      UserSession[]
 
+  @@index([roleId])
   @@map("users")
+}
+
+model Role {
+  id String @id @default(uuid()) @db.Uuid
+
+  name String @unique
+
+  description String?
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  users User[]
+
+  @@map("roles")
+}
+
+model UserSession {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @map("user_id") @db.Uuid
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  token String @unique
+
+  ipAddress String? @map("ip_address")
+
+  userAgent String? @map("user_agent")
+
+  isActive Boolean @default(true) @map("is_active")
+
+  loginAt DateTime @default(now()) @map("login_at") @db.Timestamptz(6)
+
+  logoutAt DateTime? @map("logout_at") @db.Timestamptz(6)
+
+  @@index([userId])
+  @@index([token])
+  @@map("user_sessions")
 }
 
 // ================= CATEGORY =================
