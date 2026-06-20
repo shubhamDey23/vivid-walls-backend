@@ -317,6 +317,134 @@ export const downloadService = {
 
 
 
+  async recordPublic(
+    wallpaperId: string
+  ) {
+
+
+    const wallpaper =
+      await prisma.wallpaper.findUnique({
+
+        where: {
+          id: wallpaperId,
+        },
+
+      });
+
+
+
+    if (!wallpaper) {
+
+      throw ApiError.notFound(
+        `Wallpaper ${wallpaperId} not found`
+      );
+
+    }
+
+
+
+    /*
+    -------------------------------
+    BLOCK PREMIUM DOWNLOAD
+    -------------------------------
+    */
+
+
+    if (wallpaper.isPremium) {
+
+      throw ApiError.forbidden(
+        'Premium wallpaper requires login'
+      );
+
+    }
+
+
+
+
+
+    /*
+    -------------------------------
+    CREATE DOWNLOAD RECORD
+    WITHOUT USER
+    -------------------------------
+    */
+
+
+    const result =
+      await prisma.$transaction(
+        async (tx) => {
+
+
+          const download =
+            await tx.download.create({
+
+              data: {
+
+                wallpaperId,
+
+                quality:
+                  wallpaper.quality,
+
+              },
+
+
+            });
+
+
+
+
+
+          await tx.wallpaper.update({
+
+            where: {
+              id: wallpaperId
+            },
+
+
+            data: {
+
+              downloadCount: {
+                increment: 1
+              }
+
+            },
+
+
+          });
+
+
+
+
+          return download;
+
+
+        }
+      );
+
+
+
+
+    return {
+
+      ...result,
+
+
+      downloadUrl:
+        wallpaper.imageUrl,
+
+
+      quality:
+        wallpaper.quality,
+
+
+      isPremium:
+        wallpaper.isPremium
+
+    };
+
+
+  },
+
 
 
   /**

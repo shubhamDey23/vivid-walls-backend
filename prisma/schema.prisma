@@ -169,7 +169,7 @@ model Favorite {
 model Download {
   id String @id @default(uuid()) @db.Uuid
 
-  userId String @map("user_id") @db.Uuid
+  userId String? @map("user_id") @db.Uuid
 
   wallpaperId String @map("wallpaper_id") @db.Uuid
 
@@ -177,7 +177,7 @@ model Download {
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   wallpaper Wallpaper @relation(fields: [wallpaperId], references: [id], onDelete: Cascade)
 

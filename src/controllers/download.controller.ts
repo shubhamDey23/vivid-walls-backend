@@ -29,4 +29,37 @@ export const downloadController = {
     const download = await downloadService.record(req.user!.id, wallpaperId);
     sendSuccess(res, download, { status: 201, message: 'Download recorded' });
   },
+
+  async recordPublic(
+    req: Request,
+    res: Response
+  ) {
+
+
+    const {
+      wallpaperId
+    } = req.body as {
+      wallpaperId: string
+    };
+
+
+
+    const download =
+      await downloadService.recordPublic(
+        wallpaperId
+      );
+
+
+
+    sendSuccess(
+      res,
+      download,
+      {
+        status: 201,
+        message: 'Download recorded'
+      }
+    );
+
+
+  }
 };
