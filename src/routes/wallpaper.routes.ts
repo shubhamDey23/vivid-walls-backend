@@ -12,7 +12,6 @@ import { upload } from '../middlewares/upload.middleware';
 
 const router = Router();
 
-
 const listQuery = z.object({
 
   limit: z.coerce
@@ -22,11 +21,13 @@ const listQuery = z.object({
     .max(50)
     .default(10),
 
+
   offset: z.coerce
     .number()
     .int()
     .min(0)
     .default(0),
+
 
   search: z
     .string()
@@ -34,14 +35,25 @@ const listQuery = z.object({
     .min(1)
     .optional(),
 
+
   category: z
     .string()
     .trim()
     .min(1)
     .optional(),
 
-});
 
+  active: z
+    .enum([
+      "true",
+      "false"
+    ])
+    .transform(
+      value => value === "true"
+    )
+    .default("true"),
+
+});
 
 
 const limitQuery = z.object({
@@ -145,7 +157,24 @@ router.get(
 
 
 
+// ======================================
+// LIST WALLPAPERS
+// GET /api/wallpapers
+// keep last
+// ======================================
 
+router.get(
+  '/',
+
+  validate({
+    query: listQuery
+  }),
+
+  asyncHandler(
+    wallpaperController.list
+  ),
+
+);
 
 
 
@@ -220,24 +249,7 @@ router.delete(
 
 
 
-// ======================================
-// LIST WALLPAPERS
-// GET /api/wallpapers
-// keep last
-// ======================================
 
-router.get(
-  '/',
-
-  validate({
-    query: listQuery
-  }),
-
-  asyncHandler(
-    wallpaperController.list
-  ),
-
-);
 
 
 

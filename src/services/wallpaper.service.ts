@@ -40,6 +40,8 @@ export interface ListParams {
 
   category?: string;
 
+  active?: boolean;
+
 }
 
 
@@ -101,12 +103,19 @@ export const wallpaperService = {
 
     category,
 
+    active = true,
+
+
   }: ListParams) {
 
 
 
 
-    const where: Prisma.WallpaperWhereInput = {};
+    const where: Prisma.WallpaperWhereInput = {
+
+      active
+
+    };
 
 
 
@@ -225,12 +234,6 @@ export const wallpaperService = {
 
 
 
-
-
-
-
-
-
   async getById(id: string) {
 
 
@@ -305,6 +308,8 @@ export const wallpaperService = {
 
         isFeatured: true,
 
+        active: true,
+
       },
 
 
@@ -359,6 +364,13 @@ export const wallpaperService = {
 
 
     return prisma.wallpaper.findMany({
+
+      where: {
+
+        active: true,
+
+      },
+
 
 
 
@@ -599,51 +611,40 @@ export const wallpaperService = {
 
 
 
-
-
-
-
-
-
-
-
-
   async delete(id: string) {
-
-
 
 
     await this.getById(id);
 
 
 
-
-
-    await prisma.wallpaper.delete({
-
+    await prisma.wallpaper.update({
 
       where: {
-
         id,
-
       },
 
+
+      data: {
+
+        active: false,
+
+      },
 
     });
 
 
 
 
-
     return {
 
-      message: "Wallpaper deleted",
+      message: "Wallpaper deactivated",
 
     };
 
 
+  }
 
-  },
 
 
 

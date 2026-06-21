@@ -36,14 +36,26 @@ export const wallpaperController = {
       Number(req.query.offset) || 0;
 
 
-
     const search =
       req.query.search as string | undefined;
 
 
-
     const category =
       req.query.category as string | undefined;
+
+
+
+    const active =
+      req.query.active as unknown as boolean;
+
+
+
+
+    console.log({
+      query: req.query,
+      active
+    });
+
 
 
 
@@ -61,6 +73,8 @@ export const wallpaperController = {
         search,
 
         category,
+
+        active,
 
       });
 
@@ -80,7 +94,6 @@ export const wallpaperController = {
       ),
 
       {
-
         pagination:
           buildPagination(
 
@@ -93,18 +106,11 @@ export const wallpaperController = {
             items.length
 
           )
-
       }
 
     );
 
-
   },
-
-
-
-
-
 
 
   // =====================
