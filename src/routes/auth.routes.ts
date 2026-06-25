@@ -97,6 +97,11 @@ router.post(
 
 );
 
+//Google Login
+router.post(
+ "/google",
+ authController.google
+);
 
 
 

@@ -60,7 +60,7 @@ export const authController = {
 
   },
 
-    async register(
+  async register(
     req: Request,
     res: Response
   ) {
@@ -88,7 +88,36 @@ export const authController = {
     });
 
 
-  }
+  },
+
+  async google(
+    req: Request,
+    res: Response
+  ) {
+
+
+    const result =
+      await authService.googleLogin(
+
+        req.body.idToken,
+
+        req.ip,
+
+        req.headers["user-agent"]
+
+      );
+
+
+
+    sendSuccess(res, result, {
+
+      message:
+        "Google login successful"
+
+    });
+
+
+  },
 
 
 };

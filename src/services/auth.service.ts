@@ -12,6 +12,13 @@ import { hashPassword } from '../utils/password';
 
 import { signToken } from '../utils/jwt';
 
+import { OAuth2Client } from "google-auth-library";
+
+
+const googleClient =
+  new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID
+  );
 
 /**
  * Remove sensitive fields
@@ -73,6 +80,19 @@ export const authService = {
 
     }
 
+
+
+
+    if (
+      !user.passwordHash ||
+      user.authProvider !== "LOCAL"
+    ) {
+
+      throw ApiError.unauthorized(
+        "Use Google login"
+      );
+
+    }
 
 
 
@@ -367,6 +387,342 @@ export const authService = {
       }
 
     });
+
+
+
+
+
+
+    return {
+
+
+      token,
+
+
+      user: {
+
+
+        id: user.id,
+
+
+        email: user.email,
+
+
+        username: user.username,
+
+
+        avatarUrl: user.avatarUrl,
+
+
+        bio: user.bio,
+
+
+        isPremium: user.isPremium,
+
+
+        premiumUntil: user.premiumUntil,
+
+
+        dailyDownloadCount:
+          user.dailyDownloadCount,
+
+
+        role: user.role,
+
+
+        createdAt: user.createdAt
+
+
+      }
+
+
+    };
+
+
+  }
+
+  ,
+
+
+  async googleLogin(
+
+    idToken: string,
+
+    ip?: string,
+
+    userAgent?: string
+
+  ) {
+
+
+    if (!idToken) {
+
+      throw ApiError.badRequest(
+        "Google token missing"
+      );
+
+    }
+
+
+
+    const ticket =
+      await googleClient.verifyIdToken({
+
+        idToken,
+
+        audience:
+          process.env.GOOGLE_CLIENT_ID
+
+      });
+
+
+
+    const payload =
+      ticket.getPayload();
+
+
+
+
+    if (
+      !payload ||
+      !payload.email
+    ) {
+
+      throw ApiError.unauthorized(
+        "Invalid Google account"
+      );
+
+    }
+
+
+
+
+    const googleId =
+      payload.sub;
+
+
+    const email =
+      payload.email;
+
+
+    const username =
+      payload.name ??
+      email.split("@")[0];
+
+
+    const avatar =
+      payload.picture;
+
+
+
+
+
+
+
+    let user =
+      await prisma.user.findFirst({
+
+        where: {
+
+          OR: [
+
+            {
+              googleId
+            },
+
+
+            {
+              email
+            }
+
+          ]
+
+        },
+
+
+        include: {
+
+          role: true
+
+        }
+
+      });
+
+
+
+
+
+
+
+
+    if (!user) {
+
+
+
+      const userRole =
+        await prisma.role.findUnique({
+
+          where: {
+
+            name: "USER"
+
+          }
+
+        });
+
+
+
+
+      if (!userRole) {
+
+        throw ApiError.internal(
+          "Default USER role missing"
+        );
+
+      }
+
+
+
+
+
+
+      user =
+        await prisma.user.create({
+
+          data: {
+
+            email,
+
+
+            username,
+
+
+            googleId,
+
+
+            avatarUrl: avatar,
+
+
+            authProvider: "GOOGLE",
+
+
+            roleId: userRole.id,
+
+
+            bio:
+              "Hey there 👋 I am using FlexiWalls",
+
+
+            isPremium: false,
+
+          },
+
+
+          include: {
+
+            role: true
+
+          }
+
+
+        });
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+    else if (!user.googleId) {
+
+
+      user =
+        await prisma.user.update({
+
+          where: {
+
+            id: user.id
+
+          },
+
+
+          data: {
+
+
+            googleId,
+
+
+            authProvider: "GOOGLE",
+
+
+            avatarUrl:
+              avatar ?? user.avatarUrl
+
+          },
+
+
+          include: {
+
+            role: true
+
+          }
+
+
+        });
+
+
+    }
+
+
+
+
+
+
+
+
+
+    const token =
+      signToken({
+
+        sub: user.id,
+
+        email: user.email
+
+      });
+
+
+
+
+
+
+
+
+    await prisma.userSession.create({
+
+      data: {
+
+        userId: user.id,
+
+
+        token,
+
+
+        ipAddress: ip,
+
+
+        userAgent
+
+      }
+
+    });
+
+
 
 
 

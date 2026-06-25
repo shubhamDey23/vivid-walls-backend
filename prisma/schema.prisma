@@ -10,36 +10,58 @@ datasource db {
 // ================= USER =================
 
 model User {
-  id           String @id @default(uuid()) @db.Uuid
-  email        String @unique
-  username     String
-  passwordHash String @map("password_hash")
+  id String @id @default(uuid()) @db.Uuid
+
+  email String @unique
+
+  username String
+
+  // Admin login users only
+  passwordHash String? @map("password_hash")
+
+  // Google mobile users
+  googleId String? @unique @map("google_id")
+
+  authProvider AuthProvider @default(LOCAL) @map("auth_provider")
 
   avatarUrl String? @map("avatar_url")
-  bio       String?
+
+  bio String?
 
   isPremium Boolean @default(false) @map("is_premium")
 
   premiumUntil DateTime? @map("premium_until")
 
-  dailyDownloadCount Int @default(0) @map("daily_download_count")
-
-  lastDownloadReset DateTime? @map("last_download_reset")
+  dailyDownloadCount Int       @default(0) @map("daily_download_count")
+  lastDownloadReset  DateTime? @map("last_download_reset")
 
   roleId String? @map("role_id") @db.Uuid
 
   role Role? @relation(fields: [roleId], references: [id], onDelete: SetNull)
 
-  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
-  favorites     Favorite[]
-  downloads     Download[]
-  likes         WallpaperLike[]
+  sessions UserSession[]
+
+  favorites Favorite[]
+
+  downloads Download[]
+
+  wallpaperLikes WallpaperLike[]
+
   subscriptions Subscription[]
-  sessions      UserSession[]
+
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   @@index([roleId])
+  @@index([googleId])
   @@map("users")
+}
+
+enum AuthProvider {
+  LOCAL
+
+  GOOGLE
 }
 
 model Role {
