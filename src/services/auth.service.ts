@@ -463,6 +463,7 @@ export const authService = {
 
     }
 
+    console.log("Verifying Google Token...");
 
 
     const ticket =
@@ -480,7 +481,7 @@ export const authService = {
     const payload =
       ticket.getPayload();
 
-
+    console.log(payload);
 
 
     if (
