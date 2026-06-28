@@ -1,1 +1,0 @@
-ALTER TABLE "categories" RENAME COLUMN "icon" TO "thumbnail_url";

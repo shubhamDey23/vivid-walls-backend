@@ -1,164 +1,107 @@
-import { Router } from 'express';
-import { z } from 'zod';
+import { Router } from "express";
 
-import { categoryController } from '../controllers/category.controller';
-import { validate } from '../middlewares/validate.middleware';
-import { asyncHandler } from '../utils/asyncHandler';
-import { categoryThumbnailUpload } from '../middlewares/upload.middleware';
+import { categoryController } from "../controllers/category.controller";
+
+import { validate } from "../middlewares/validate.middleware";
+
+import { asyncHandler } from "../utils/asyncHandler";
+
+import { upload } from "../middlewares/upload.middleware";
+
+import {
+  categorySlugParams,
+  categoryListQuery,
+  createCategoryBody,
+  updateCategoryBody,
+  reorderCategoryBody,
+} from "../validations/category.validation";
 
 const router = Router();
 
-// ==============================
-// HELPERS
-// ==============================
+// ======================================================
+// PUBLIC ROUTES
+// ======================================================
 
-const emptyStringToUndefined = (value: unknown) => {
-  if (typeof value === 'string' && value.trim() === '') {
-    return undefined;
-  }
-
-  return value;
-};
-
-const optionalString = z.preprocess(
-  emptyStringToUndefined,
-  z.string().trim().min(1).optional(),
-);
-
-const optionalNullableString = z.preprocess(
-  emptyStringToUndefined,
-  z.string().trim().min(1).nullable().optional(),
-);
-
-// ==============================
-// VALIDATION SCHEMAS
-// ==============================
-
-const slugParam = z.object({
-  slug: z.string().trim().min(1),
-});
-
-const pageQuery = z.object({
-  limit: z.coerce.number().int().min(1).max(50).default(20),
-
-  offset: z.coerce.number().int().min(0).default(0),
-});
-
-const createCategoryBody = z.object({
-  name: z.string().trim().min(1),
-
-  slug: optionalString,
-
-  thumbnailUrl: optionalNullableString,
-});
-
-const updateCategoryBody = z.object({
-  name: optionalString,
-
-  slug: optionalString,
-
-  thumbnailUrl: optionalNullableString,
-});
-
-// ======================================
-// LIST CATEGORIES
 // GET /api/categories
-// ======================================
-
 router.get(
-  '/',
-  asyncHandler(categoryController.list),
+  "/",
+  validate({
+    query: categoryListQuery,
+  }),
+  asyncHandler(categoryController.list)
 );
 
-// ======================================
-// CREATE CATEGORY
-// POST /api/categories
-// form-data field name for image: thumbnail
-// ======================================
+// GET /api/categories/:slug
+router.get(
+  "/:slug",
+  validate({
+    params: categorySlugParams,
+  }),
+  asyncHandler(categoryController.getBySlug)
+);
 
+// ======================================================
+// ADMIN ROUTES
+// ======================================================
+
+// POST /api/categories
 router.post(
-  '/',
-  categoryThumbnailUpload.single('thumbnail'),
+  "/",
+  upload.single("thumbnail"),
   validate({
     body: createCategoryBody,
   }),
-  asyncHandler(categoryController.create),
+  asyncHandler(categoryController.create)
 );
 
-// ======================================
-// GET CATEGORY WALLPAPERS
-// GET /api/categories/:slug/wallpapers
-// keep this before /:slug
-// ======================================
-
-router.get(
-  '/:slug/wallpapers',
-  validate({
-    params: slugParam,
-
-    query: pageQuery,
-  }),
-  asyncHandler(categoryController.wallpapers),
-);
-
-// ======================================
-// GET CATEGORY BY SLUG
-// GET /api/categories/:slug
-// ======================================
-
-router.get(
-  '/:slug',
-  validate({
-    params: slugParam,
-  }),
-  asyncHandler(categoryController.getBySlug),
-);
-
-// ======================================
-// UPDATE CATEGORY BY SLUG
 // PUT /api/categories/:slug
-// form-data field name for image: thumbnail
-// ======================================
-
 router.put(
-  '/:slug',
-  categoryThumbnailUpload.single('thumbnail'),
+  "/:slug",
+  upload.single("thumbnail"),
   validate({
-    params: slugParam,
-
+    params: categorySlugParams,
     body: updateCategoryBody,
   }),
-  asyncHandler(categoryController.update),
+  asyncHandler(categoryController.update)
 );
 
-// ======================================
-// UPDATE CATEGORY BY SLUG
 // PATCH /api/categories/:slug
-// form-data field name for image: thumbnail
-// ======================================
-
 router.patch(
-  '/:slug',
-  categoryThumbnailUpload.single('thumbnail'),
+  "/:slug",
+  upload.single("thumbnail"),
   validate({
-    params: slugParam,
-
+    params: categorySlugParams,
     body: updateCategoryBody,
   }),
-  asyncHandler(categoryController.update),
+  asyncHandler(categoryController.update)
 );
 
-// ======================================
-// DELETE CATEGORY BY SLUG
-// DELETE /api/categories/:slug
-// ======================================
-
-router.delete(
-  '/:slug',
+// PATCH /api/categories/:slug/toggle
+router.patch(
+  "/:slug/toggle",
   validate({
-    params: slugParam,
+    params: categorySlugParams,
   }),
-  asyncHandler(categoryController.delete),
+  asyncHandler(categoryController.toggleActive)
+);
+
+// PATCH /api/categories/:slug/reorder
+router.patch(
+  "/:slug/reorder",
+  validate({
+    params: categorySlugParams,
+    body: reorderCategoryBody,
+  }),
+  asyncHandler(categoryController.reorder)
+);
+
+// DELETE /api/categories/:slug
+router.delete(
+  "/:slug",
+  validate({
+    params: categorySlugParams,
+  }),
+  asyncHandler(categoryController.delete)
 );
 
 export default router;

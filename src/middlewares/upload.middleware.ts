@@ -1,193 +1,82 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 
-// ==============================
-// ENSURE UPLOAD FOLDER EXISTS
-// ==============================
+// ===================================================
+// TEMP DIRECTORY
+// ===================================================
 
-const ensureDir = (dir: string) => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, {
-            recursive: true
-        });
-    }
-};
+const TEMP_DIR = path.join(process.cwd(), "uploads", "temp");
 
+if (!fs.existsSync(TEMP_DIR)) {
+    fs.mkdirSync(TEMP_DIR, { recursive: true });
+}
 
-// ==============================
-// COMMON IMAGE FILTER
-// ==============================
+// ===================================================
+// IMAGE FILTER
+// ===================================================
 
-const imageFileFilter: multer.Options["fileFilter"] = (
-    _req,
+const imageFilter: multer.Options["fileFilter"] = (
+    req,
     file,
     cb
 ) => {
 
-    if (
-        file.mimetype.startsWith(
-            "image/"
-        )
-    ) {
-        cb(null, true);
-    }
-    else {
-        cb(
-            new Error(
-                "Only images allowed"
-            )
-        );
-    }
+    const allowed = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/jpg",
+        "image/avif"
+    ];
 
+    if (allowed.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error("Only image files are allowed."));
+    }
 };
 
+// ===================================================
+// STORAGE
+// ===================================================
 
-// ==============================
-// WALLPAPER UPLOAD STORAGE
-// Used for existing wallpaper upload
-// Saves to: uploads/
-// ==============================
+const storage = multer.diskStorage({
 
-const wallpaperStorage = multer.diskStorage({
+    destination(req, file, cb) {
 
-    destination: (
-        _req,
-        _file,
-        cb
-    ) => {
-
-        const uploadPath =
-            path.join(
-                process.cwd(),
-                "uploads"
-            );
-
-        ensureDir(uploadPath);
-
-        cb(
-            null,
-            uploadPath
-        );
+        cb(null, TEMP_DIR);
 
     },
 
+    filename(req, file, cb) {
 
-    filename: (
-        _req,
-        file,
-        cb
-    ) => {
-
-        const uniqueName =
-            Date.now()
-            + "-"
-            + Math.round(Math.random() * 1e9)
-            + path.extname(file.originalname);
+        const ext = path.extname(file.originalname);
 
         cb(
             null,
-            uniqueName
+            crypto.randomUUID() + ext
         );
 
     }
 
 });
 
+// ===================================================
+// EXPORT
+// ===================================================
 
-// ==============================
-// CATEGORY THUMBNAIL STORAGE
-// Used for category thumbnail upload
-// Saves to: uploads/thumbnails/
-// ==============================
+export const upload = multer({
 
-const categoryThumbnailStorage = multer.diskStorage({
+    storage,
 
-    destination: (
-        _req,
-        _file,
-        cb
-    ) => {
+    fileFilter: imageFilter,
 
-        const uploadPath =
-            path.join(
-                process.cwd(),
-                "uploads",
-                "thumbnails"
-            );
+    limits: {
 
-        ensureDir(uploadPath);
-
-        cb(
-            null,
-            uploadPath
-        );
-
-    },
-
-
-    filename: (
-        _req,
-        file,
-        cb
-    ) => {
-
-        const uniqueName =
-            "category-"
-            + Date.now()
-            + "-"
-            + Math.round(Math.random() * 1e9)
-            + path.extname(file.originalname);
-
-        cb(
-            null,
-            uniqueName
-        );
+        fileSize: 25 * 1024 * 1024
 
     }
 
 });
-
-
-// ==============================
-// WALLPAPER UPLOAD
-// Existing export - do not remove
-// ==============================
-
-export const upload =
-    multer({
-
-        storage:
-            wallpaperStorage,
-
-        limits: {
-            fileSize:
-                10 * 1024 * 1024
-        },
-
-        fileFilter:
-            imageFileFilter
-
-    });
-
-
-// ==============================
-// CATEGORY THUMBNAIL UPLOAD
-// New export for category image
-// ==============================
-
-export const categoryThumbnailUpload =
-    multer({
-
-        storage:
-            categoryThumbnailStorage,
-
-        limits: {
-            fileSize:
-                5 * 1024 * 1024
-        },
-
-        fileFilter:
-            imageFileFilter
-
-    });
