@@ -4,242 +4,217 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
-
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL!,
 });
-
 
 const prisma = new PrismaClient({
   adapter,
 });
 
-
 const img = (seed: string) =>
   `https://picsum.photos/seed/${seed}/800/1400`;
 
+const categoryThumb = (seed: string) =>
+  `https://picsum.photos/seed/flexiwalls-category-${seed}/800/450`;
 
 const CATEGORIES = [
   {
     name: "Anime",
     slug: "anime",
-    icon: "happy-outline",
+    thumbnailUrl: categoryThumb("anime"),
   },
   {
     name: "Sports",
     slug: "sports",
-    icon: "football-outline",
+    thumbnailUrl: categoryThumb("sports"),
   },
   {
     name: "Nature",
     slug: "nature",
-    icon: "leaf-outline",
+    thumbnailUrl: categoryThumb("nature"),
   },
   {
     name: "Cars",
     slug: "cars",
-    icon: "car-sport-outline",
+    thumbnailUrl: categoryThumb("cars"),
   },
   {
     name: "Abstract",
     slug: "abstract",
-    icon: "color-palette-outline",
+    thumbnailUrl: categoryThumb("abstract"),
   },
   {
     name: "City",
     slug: "city",
-    icon: "business-outline",
+    thumbnailUrl: categoryThumb("city"),
   },
   {
     name: "Space",
     slug: "space",
-    icon: "planet-outline",
+    thumbnailUrl: categoryThumb("space"),
   },
   {
     name: "Gaming",
     slug: "gaming",
-    icon: "game-controller-outline",
+    thumbnailUrl: categoryThumb("gaming"),
   },
   {
     name: "Animals",
     slug: "animals",
-    icon: "paw-outline",
+    thumbnailUrl: categoryThumb("animals"),
   },
 ];
 
-
 const WALLPAPERS = [
-
   {
     title: "Majestic Lion",
     category: "animals",
     seed: "lion",
     premium: true,
     featured: true,
-    likes: 12500
+    likes: 12500,
   },
-
   {
     title: "Wolf Moon",
     category: "animals",
     seed: "wolf",
     premium: false,
     featured: false,
-    likes: 5600
+    likes: 5600,
   },
-
   {
     title: "Cyber Samurai",
     category: "anime",
     seed: "samurai",
     premium: true,
     featured: true,
-    likes: 15200
+    likes: 15200,
   },
-
   {
     title: "Anime Warrior",
     category: "anime",
     seed: "anime-warrior",
     premium: false,
     featured: false,
-    likes: 8200
+    likes: 8200,
   },
-
   {
     title: "Galaxy Dream",
     category: "space",
     seed: "galaxy",
     premium: true,
     featured: true,
-    likes: 22000
+    likes: 22000,
   },
-
   {
     title: "Mars Explorer",
     category: "space",
     seed: "mars",
     premium: false,
     featured: false,
-    likes: 7300
+    likes: 7300,
   },
-
   {
     title: "Alpine Mirror",
     category: "nature",
     seed: "mountain",
     premium: false,
     featured: true,
-    likes: 9800
+    likes: 9800,
   },
-
   {
     title: "Rain Forest",
     category: "nature",
     seed: "forest",
     premium: true,
     featured: false,
-    likes: 11200
+    likes: 11200,
   },
-
   {
     title: "Neon Racer",
     category: "cars",
     seed: "sport-car",
     premium: false,
     featured: true,
-    likes: 7600
+    likes: 7600,
   },
-
   {
     title: "Luxury Beast",
     category: "cars",
     seed: "supercar",
     premium: true,
     featured: false,
-    likes: 16500
+    likes: 16500,
   },
-
   {
     title: "Football Arena",
     category: "sports",
     seed: "football",
     premium: false,
     featured: false,
-    likes: 6500
+    likes: 6500,
   },
-
   {
     title: "Basketball Fire",
     category: "sports",
     seed: "basketball",
     premium: true,
     featured: false,
-    likes: 8700
+    likes: 8700,
   },
-
   {
     title: "Liquid Aura",
     category: "abstract",
     seed: "abstract",
     premium: false,
     featured: true,
-    likes: 6100
+    likes: 6100,
   },
-
   {
     title: "Dark Waves",
     category: "abstract",
     seed: "dark-wave",
     premium: true,
     featured: false,
-    likes: 9400
+    likes: 9400,
   },
-
   {
     title: "Tokyo Night",
     category: "city",
     seed: "tokyo",
     premium: true,
     featured: true,
-    likes: 19000
+    likes: 19000,
   },
-
   {
     title: "New York Lights",
     category: "city",
     seed: "newyork",
     premium: false,
     featured: false,
-    likes: 7800
+    likes: 7800,
   },
-
   {
     title: "Gaming Warrior",
     category: "gaming",
     seed: "gaming",
     premium: true,
     featured: false,
-    likes: 8900
+    likes: 8900,
   },
-
   {
     title: "Cyber Controller",
     category: "gaming",
     seed: "controller",
     premium: false,
     featured: false,
-    likes: 4300
-  }
-
+    likes: 4300,
+  },
 ];
 
-
 async function main() {
-
-
   console.log("🌱 Start seed");
-
 
   //
   // CLEAR DATA
@@ -261,139 +236,77 @@ async function main() {
 
   await prisma.role.deleteMany();
 
-
-
-
-
   //
   // ROLES
   //
 
   const adminRole = await prisma.role.create({
-
     data: {
-      name: "ADMIN"
-    }
-
+      name: "ADMIN",
+    },
   });
-
 
   const userRole = await prisma.role.create({
-
     data: {
-      name: "USER"
-    }
-
+      name: "USER",
+    },
   });
-
 
   //
   // USERS
   //
 
-  const admin =
-    await prisma.user.create({
+  await prisma.user.create({
+    data: {
+      email: "admin@vividwalls.app",
 
-      data: {
+      username: "Admin",
 
-        email: "admin@vividwalls.app",
+      passwordHash: await bcrypt.hash("Admin123", 10),
 
-        username: "Admin",
+      avatarUrl: img("admin"),
 
-        passwordHash:
-          await bcrypt.hash(
-            "Admin123",
-            10
-          ),
+      bio: "Application administrator",
 
-        avatarUrl:
-          img("admin"),
+      isPremium: true,
 
-        bio:
-          "Application administrator",
+      roleId: adminRole.id,
+    },
+  });
 
-        isPremium: true,
+  const user = await prisma.user.create({
+    data: {
+      email: "demo@vividwalls.app",
 
+      username: "Ethan Hunt",
 
-        roleId:
-          adminRole.id
+      passwordHash: await bcrypt.hash("Password123", 10),
 
-      }
+      bio: "Wallpaper lover ✨",
 
-    });
+      avatarUrl: img("avatar"),
 
+      isPremium: true,
 
+      premiumUntil: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
 
-  const user =
-    await prisma.user.create({
-
-      data: {
-
-        email:
-          "demo@vividwalls.app",
-
-        username:
-          "Ethan Hunt",
-
-        passwordHash:
-          await bcrypt.hash(
-            "Password123",
-            10
-          ),
-
-        bio:
-          "Wallpaper lover ✨",
-
-        avatarUrl:
-          img("avatar"),
-
-        isPremium: true,
-
-
-        premiumUntil:
-          new Date(
-            Date.now()
-            +
-            1000 * 60 * 60 * 24 * 365
-          ),
-
-
-        roleId:
-          userRole.id
-
-      }
-
-    });
-
+      roleId: userRole.id,
+    },
+  });
 
   //
   // CATEGORY
   //
 
-  const categoryMap =
-    new Map<string, string>();
-
+  const categoryMap = new Map<string, string>();
 
   for (const c of CATEGORIES) {
+    const category = await prisma.category.create({
+      data: c,
+    });
 
-
-    const category =
-      await prisma.category.create({
-
-        data: c
-
-      });
-
-
-    categoryMap.set(
-      c.slug,
-      category.id
-    );
-
-
+    categoryMap.set(c.slug, category.id);
   }
-
-
 
   //
   // WALLPAPER
@@ -401,194 +314,115 @@ async function main() {
 
   const created: any[] = [];
 
-
   for (const w of WALLPAPERS) {
+    const wallpaper = await prisma.wallpaper.create({
+      data: {
+        title: w.title,
 
+        description: "Premium HD wallpaper",
 
-    const wallpaper =
-      await prisma.wallpaper.create({
+        imageUrl: img(w.seed),
 
-        data: {
+        thumbnailUrl: img(w.seed),
 
-          title: w.title,
+        quality: w.premium ? "8K" : "4K",
 
+        resolution: w.premium ? "7680x4320" : "3840x2160",
 
-          description:
-            "Premium HD wallpaper",
+        isPremium: w.premium,
 
+        isFeatured: w.featured,
 
-          imageUrl:
-            img(w.seed),
+        likes: w.likes,
 
+        downloadCount: Math.floor(Math.random() * 9000),
 
-          thumbnailUrl:
-            img(w.seed),
-
-
-          quality:
-            w.premium
-              ?
-              "8K"
-              :
-              "4K",
-
-
-          resolution:
-            w.premium
-              ?
-              "7680x4320"
-              :
-              "3840x2160",
-
-
-          isPremium:
-            w.premium,
-
-
-          isFeatured:
-            w.featured,
-
-
-          likes:
-            w.likes,
-
-
-          downloadCount:
-            Math.floor(
-              Math.random() * 9000
-            ),
-
-
-          categoryId:
-            categoryMap.get(w.category)!
-
-        }
-
-      });
-
+        categoryId: categoryMap.get(w.category)!,
+      },
+    });
 
     created.push(wallpaper);
-
-
   }
-
-
 
   //
   // FAVORITES
   //
 
   await prisma.favorite.createMany({
-
     data: [
-
       {
         userId: user.id,
-        wallpaperId: created[0].id
+        wallpaperId: created[0].id,
       },
-
       {
         userId: user.id,
-        wallpaperId: created[2].id
-      }
-
-    ]
-
+        wallpaperId: created[2].id,
+      },
+    ],
   });
-
 
   //
   // LIKES
   //
 
   await prisma.wallpaperLike.create({
-
     data: {
-
       userId: user.id,
 
-      wallpaperId: created[0].id
-
-    }
-
+      wallpaperId: created[0].id,
+    },
   });
-
 
   //
   // DOWNLOAD HISTORY
   //
 
   await prisma.download.createMany({
-
     data: [
-
       {
         userId: user.id,
         wallpaperId: created[0].id,
-        quality: "8K"
+        quality: "8K",
       },
-
       {
         userId: user.id,
         wallpaperId: created[2].id,
-        quality: "4K"
-      }
-
-    ]
-
+        quality: "4K",
+      },
+    ],
   });
-
 
   //
   // PREMIUM SUBSCRIPTION
   //
 
   await prisma.subscription.create({
-
     data: {
-
       userId: user.id,
 
       plan: "annual",
 
       platform: "android",
 
-      purchaseToken:
-        "demo-token",
+      purchaseToken: "demo-token",
 
       startDate: new Date(),
 
-      endDate:
-        new Date(
-          Date.now()
-          +
-          1000 * 60 * 60 * 24 * 365
-        ),
+      endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365),
 
-      active: true
-
-    }
-
+      active: true,
+    },
   });
 
-
   console.log("✅ Seed completed");
-
-
 }
 
-
-
 main()
-  .catch(e => {
-
+  .catch((e) => {
     console.error(e);
 
     process.exit(1);
-
   })
   .finally(async () => {
-
     await prisma.$disconnect();
-
   });

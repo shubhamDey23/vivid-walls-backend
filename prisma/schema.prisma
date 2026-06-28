@@ -111,7 +111,7 @@ model Category {
 
   slug String @unique
 
-  icon String?
+  thumbnailUrl String? @map("thumbnail_url")
 
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 

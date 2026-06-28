@@ -1,32 +1,26 @@
 import { Request } from 'express';
 import { absoluteUrl } from './url';
 
-
 type CategoryLite = {
-
   id: string;
 
   name: string;
 
   slug: string;
 
-  icon: string | null;
-
+  thumbnailUrl: string | null;
 };
 
-
-
 export type WallpaperRow = {
-
   id: string;
 
   title: string;
 
   description: string | null;
 
-  imageUrl: string | null;     // FIX
+  imageUrl: string | null;
 
-  videoUrl: string | null;     // FIX
+  videoUrl: string | null;
 
   thumbnailUrl: string | null;
 
@@ -47,91 +41,47 @@ export type WallpaperRow = {
   categoryId: string | null;
 
   category?: CategoryLite | null;
-
 };
-
-
-
 
 /**
  * Shapes a Prisma wallpaper row into
  * the JSON the frontend consumes.
  */
-export const toWallpaperDTO = (
-  req: Request,
-  w: WallpaperRow
-) => ({
-
+export const toWallpaperDTO = (req: Request, w: WallpaperRow) => ({
   id: w.id,
 
   title: w.title,
 
   description: w.description,
 
+  imageUrl: w.imageUrl ? absoluteUrl(req, w.imageUrl) : null,
 
-  imageUrl:
-    w.imageUrl
-      ? absoluteUrl(
-        req,
-        w.imageUrl
-      )
-      : null,
+  videoUrl: w.videoUrl ? absoluteUrl(req, w.videoUrl) : null,
 
+  thumbnailUrl: w.thumbnailUrl ? absoluteUrl(req, w.thumbnailUrl) : null,
 
-  videoUrl:
-    w.videoUrl
-      ? absoluteUrl(
-        req,
-        w.videoUrl
-      )
-      : null,
+  quality: w.quality,
 
+  resolution: w.resolution,
 
-  thumbnailUrl:
-    w.thumbnailUrl
-      ? absoluteUrl(
-        req,
-        w.thumbnailUrl
-      )
-      : null,
+  isPremium: w.isPremium,
 
+  isFeatured: w.isFeatured,
 
-  quality:
-    w.quality,
+  likes: w.likes,
 
+  downloadCount: w.downloadCount,
 
-  resolution:
-    w.resolution,
+  createdAt: w.createdAt,
 
-
-  isPremium:
-    w.isPremium,
-
-
-  isFeatured:
-    w.isFeatured,
-
-
-  likes:
-    w.likes,
-
-
-  downloadCount:
-    w.downloadCount,
-
-
-  createdAt:
-    w.createdAt,
-
-
-  category:
-    w.category
-      ? {
+  category: w.category
+    ? {
         id: w.category.id,
         name: w.category.name,
         slug: w.category.slug,
-        icon: w.category.icon,
+        thumbnailUrl: w.category.thumbnailUrl
+          ? absoluteUrl(req, w.category.thumbnailUrl)
+          : null,
       }
-      : null,
-
+    : null,
 });
