@@ -9,18 +9,10 @@ export const favoriteParams = z.object({
 });
 
 // ======================================
-// ADD TO FAVORITES
+// ADD FAVORITE
 // ======================================
 
 export const addFavoriteBody = z.object({
-    wallpaperId: z.string().uuid(),
-});
-
-// ======================================
-// REMOVE FAVORITE
-// ======================================
-
-export const removeFavoriteBody = z.object({
     wallpaperId: z.string().uuid(),
 });
 
@@ -41,30 +33,4 @@ export const favoriteListQuery = z.object({
         .int()
         .min(0)
         .default(0),
-
-    search: z
-        .string()
-        .trim()
-        .optional(),
-
-    category: z
-        .string()
-        .uuid()
-        .optional(),
-
-    premiumOnly: z.coerce
-        .boolean()
-        .optional(),
-
-    featuredOnly: z.coerce
-        .boolean()
-        .optional(),
-});
-
-// ======================================
-// CHECK FAVORITE
-// ======================================
-
-export const checkFavoriteParams = z.object({
-    wallpaperId: z.string().uuid(),
 });
