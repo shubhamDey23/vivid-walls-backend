@@ -432,7 +432,7 @@ model Subscription {
 
   platform SubscriptionPlatform
 
-  purchaseToken String
+  purchaseToken String @unique
 
   transactionId String?
 
