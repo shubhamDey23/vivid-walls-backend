@@ -18,7 +18,7 @@ if (!fs.existsSync(TEMP_DIR)) {
 // ===================================================
 
 const imageFilter: multer.Options["fileFilter"] = (
-    req,
+    _req,
     file,
     cb
 ) => {
@@ -44,13 +44,13 @@ const imageFilter: multer.Options["fileFilter"] = (
 
 const storage = multer.diskStorage({
 
-    destination(req, file, cb) {
+    destination(_req, _file, cb) {
 
         cb(null, TEMP_DIR);
 
     },
 
-    filename(req, file, cb) {
+    filename(_req, file, cb) {
 
         const ext = path.extname(file.originalname);
 

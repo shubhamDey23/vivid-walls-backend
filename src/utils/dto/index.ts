@@ -6,9 +6,9 @@ export {
     toWallpaperDTO,
 } from "./wallpaper.dto";
 
-export type {
-    WallpaperDTOModel,
-} from "./wallpaper.dto";
+// export type {
+//     WallpaperDTOModel,
+// } from "./wallpaper.dto";
 
 // ==============================
 // Category
