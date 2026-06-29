@@ -1,7 +1,5 @@
 import slugify from "slugify";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import prisma from "../config/prisma";
 
 /**
  * Convert text to URL slug
