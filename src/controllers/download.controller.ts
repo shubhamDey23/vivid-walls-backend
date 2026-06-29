@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { downloadService } from '../services/download.service';
 import { toWallpaperDTO } from '../utils/dto';
-import { sendSuccess, buildPagination } from '../utils/ApiResponse';
+import { response, buildPagination } from '../utils/ApiResponse';
 
 export const downloadController = {
   async list(req: Request, res: Response) {
@@ -14,7 +14,7 @@ export const downloadController = {
       limit,
       offset,
     );
-    sendSuccess(
+    response.success(
       res,
       items.map((w) => ({
         ...toWallpaperDTO(req, w),
@@ -27,7 +27,7 @@ export const downloadController = {
   async record(req: Request, res: Response) {
     const { wallpaperId } = req.body as { wallpaperId: string };
     const download = await downloadService.record(req.user!.id, wallpaperId);
-    sendSuccess(res, download, { status: 201, message: 'Download recorded' });
+    response.success(res, download, { status: 201, message: 'Download recorded' });
   },
 
   async recordPublic(
@@ -51,7 +51,7 @@ export const downloadController = {
 
 
 
-    sendSuccess(
+    response.success(
       res,
       download,
       {

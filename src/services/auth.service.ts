@@ -8,7 +8,6 @@ import {
   comparePassword,
 } from '../utils/password';
 
-import { hashPassword } from '../utils/password';
 
 import { signToken } from '../utils/jwt';
 
@@ -39,127 +38,92 @@ export const authService = {
 
 
   async login(
-
     input: {
       email: string;
       password: string;
     },
-
     ip?: string,
-
     userAgent?: string
-
   ) {
-
-
-
-    const user =
-      await prisma.user.findUnique({
-
-        where: {
-
-          email: input.email
-
-        },
-
-        include: {
-
-          role: true
-
-        }
-
-      });
-
-
-
-    if (!user) {
-
-      throw ApiError.unauthorized(
-        'Invalid email or password'
-      );
-
-    }
-
-
-
-
-    if (
-      !user.passwordHash ||
-      user.authProvider !== "LOCAL"
-    ) {
-
-      throw ApiError.unauthorized(
-        "Use Google login"
-      );
-
-    }
-
-
-
-    const valid =
-      await comparePassword(
-
-        input.password,
-
-        user.passwordHash
-
-      );
-
-
-
-    if (!valid) {
-
-      throw ApiError.unauthorized(
-        'Invalid email or password'
-      );
-
-    }
-
-
-
-
-    const token =
-      signToken({
-
-        sub: user.id,
-
-        email: user.email
-
-      });
-
-
-
-    /**
-     * save login history
-     */
-    await prisma.userSession.create({
-
-      data: {
-
-        userId: user.id,
-
-        token,
-
-        ipAddress: ip,
-
-        userAgent
-
-      }
-
+    const user = await prisma.user.findUnique({
+      where: {
+        email: input.email,
+      },
+      include: {
+        role: true,
+      },
     });
 
+    if (!user) {
+      throw ApiError.unauthorized(
+        "Invalid email or password."
+      );
+    }
 
+    if (user.authProvider !== "LOCAL") {
+      throw ApiError.unauthorized(
+        "Please sign in with Google."
+      );
+    }
 
+    if (!user.passwordHash) {
+      throw ApiError.unauthorized(
+        "Password not set."
+      );
+    }
+
+    const validPassword = await comparePassword(
+      input.password,
+      user.passwordHash
+    );
+
+    if (!validPassword) {
+      throw ApiError.unauthorized(
+        "Invalid email or password."
+      );
+    }
+
+    // Close previous active sessions
+    await prisma.userSession.updateMany({
+      where: {
+        userId: user.id,
+        isActive: true,
+      },
+      data: {
+        isActive: false,
+        logoutAt: new Date(),
+      },
+    });
+
+    const token = signToken({
+      sub: user.id,
+      email: user.email,
+      role: user.role?.name,
+    });
+
+    await prisma.userSession.create({
+      data: {
+        userId: user.id,
+        token,
+        ipAddress: ip,
+        userAgent,
+        isActive: true,
+      },
+    });
+
+    await prisma.user.update({
+      where: {
+        id: user.id,
+      },
+      data: {
+        lastSeen: new Date(),
+      },
+    });
 
     return {
-
+      token,
       user: sanitize(user),
-
-      token
-
     };
-
-
   },
 
 
@@ -221,561 +185,213 @@ export const authService = {
   },
 
 
-  async register(
-    input: {
-      email: string;
-      username: string;
-      password: string;
-    },
-
-    ip?: string,
-
-    userAgent?: string
-  ) {
-
-
-    const existing =
-      await prisma.user.findUnique({
-
-        where: {
-          email: input.email
-        }
-
-      });
-
-
-
-    if (existing) {
-
-      throw ApiError.conflict(
-        "An account with this email already exists"
-      );
-
-    }
-
-
-
-
-
-    /**
-     * Get default USER role
-     */
-    const userRole =
-      await prisma.role.findUnique({
-
-        where: {
-          name: "USER"
-        }
-
-      });
-
-
-
-
-    if (!userRole) {
-
-      throw ApiError.internal(
-        "Default USER role missing"
-      );
-
-    }
-
-
-
-
-
-    /**
-     * Create User
-     */
-    const user =
-      await prisma.user.create({
-
-        data: {
-
-
-          email: input.email,
-
-
-          username: input.username,
-
-
-          passwordHash:
-            await hashPassword(
-              input.password
-            ),
-
-
-
-          /**
-           * defaults
-           */
-          roleId: userRole.id,
-
-
-          bio:
-            "Hey there 👋 I am using FlexiWalls",
-
-
-
-          avatarUrl:
-            "https://api.dicebear.com/9.x/avataaars/svg?seed=" +
-            encodeURIComponent(
-              input.username
-            ),
-
-
-
-          isPremium: false,
-
-
-          dailyDownloadCount: 0
-
-
-        },
-
-
-        include: {
-
-          role: true
-
-        }
-
-
-      });
-
-
-
-
-
-    /**
-     * Generate JWT
-     */
-    const token =
-      signToken({
-
-        sub: user.id,
-
-        email: user.email
-
-      });
-
-
-
-
-
-
-    /**
-     * Save Login Session
-     */
-    await prisma.userSession.create({
-
-      data: {
-
-
-        userId: user.id,
-
-
-        token,
-
-
-        ipAddress: ip,
-
-
-        userAgent
-
-
-      }
-
-    });
-
-
-
-
-
-
-    return {
-
-
-      token,
-
-
-      user: {
-
-
-        id: user.id,
-
-
-        email: user.email,
-
-
-        username: user.username,
-
-
-        avatarUrl: user.avatarUrl,
-
-
-        bio: user.bio,
-
-
-        isPremium: user.isPremium,
-
-
-        premiumUntil: user.premiumUntil,
-
-
-        dailyDownloadCount:
-          user.dailyDownloadCount,
-
-
-        role: user.role,
-
-
-        createdAt: user.createdAt
-
-
-      }
-
-
-    };
-
-
-  }
-
-  ,
-
-
   async googleLogin(
-
     idToken: string,
-
     ip?: string,
-
     userAgent?: string
-
   ) {
-
-
     if (!idToken) {
-
       throw ApiError.badRequest(
-        "Google token missing"
+        "Google token is required."
       );
-
     }
-
-    console.log("Verifying Google Token...");
-
 
     const ticket =
       await googleClient.verifyIdToken({
-
         idToken,
-
-        audience:
-          process.env.GOOGLE_CLIENT_ID
-
+        audience: process.env.GOOGLE_CLIENT_ID,
       });
 
+    const payload = ticket.getPayload();
 
-
-    const payload =
-      ticket.getPayload();
-
-    console.log(payload);
-
-
-    if (
-      !payload ||
-      !payload.email
-    ) {
-
+    if (!payload) {
       throw ApiError.unauthorized(
-        "Invalid Google account"
+        "Invalid Google account."
       );
-
     }
 
+    if (!payload.email) {
+      throw ApiError.unauthorized(
+        "Google account has no email."
+      );
+    }
 
+    if (!payload.email_verified) {
+      throw ApiError.unauthorized(
+        "Google email is not verified."
+      );
+    }
 
-
-    const googleId =
-      payload.sub;
-
-
-    const email =
-      payload.email;
-
+    const googleId = payload.sub;
+    const email = payload.email;
 
     const username =
       payload.name ??
       email.split("@")[0];
 
-
-    const avatar =
-      payload.picture;
-
-
-
-
-
-
+    const avatar = payload.picture;
 
     let user =
       await prisma.user.findFirst({
-
         where: {
-
           OR: [
-
             {
-              googleId
+              googleId,
             },
-
-
             {
-              email
-            }
-
-          ]
-
+              email,
+            },
+          ],
         },
 
-
         include: {
-
-          role: true
-
-        }
-
+          role: true,
+        },
       });
 
-
-
-
-
-
-
+    // ------------------------------------
+    // Create New User
+    // ------------------------------------
 
     if (!user) {
-
-
-
-      const userRole =
+      const role =
         await prisma.role.findUnique({
-
           where: {
-
-            name: "USER"
-
-          }
-
+            name: "USER",
+          },
         });
 
-
-
-
-      if (!userRole) {
-
+      if (!role) {
         throw ApiError.internal(
-          "Default USER role missing"
+          "Default USER role not found."
         );
-
       }
-
-
-
-
-
 
       user =
         await prisma.user.create({
-
           data: {
-
             email,
-
 
             username,
 
-
             googleId,
-
-
-            avatarUrl: avatar,
-
 
             authProvider: "GOOGLE",
 
+            roleId: role.id,
 
-            roleId: userRole.id,
-
+            avatarUrl:
+              avatar ??
+              "https://api.dicebear.com/9.x/initials/svg?seed=" +
+              encodeURIComponent(username),
 
             bio:
               "Hey there 👋 I am using FlexiWalls",
 
-
             isPremium: false,
 
-          },
+            dailyDownloadCount: 0,
 
+            lastSeen: new Date(),
+          },
 
           include: {
-
-            role: true
-
-          }
-
-
+            role: true,
+          },
         });
-
-
-
     }
 
-
-
-
-
-
-
-
+    // ------------------------------------
+    // Link Existing LOCAL Account
+    // ------------------------------------
 
     else if (!user.googleId) {
-
-
       user =
         await prisma.user.update({
-
           where: {
-
-            id: user.id
-
+            id: user.id,
           },
 
-
           data: {
-
-
             googleId,
-
 
             authProvider: "GOOGLE",
 
-
             avatarUrl:
-              avatar ?? user.avatarUrl
+              user.avatarUrl ?? avatar,
 
+            lastSeen: new Date(),
           },
 
-
           include: {
-
-            role: true
-
-          }
-
-
+            role: true,
+          },
         });
-
-
     }
 
+    // ------------------------------------
+    // Existing Google User
+    // ------------------------------------
 
+    else {
+      user =
+        await prisma.user.update({
+          where: {
+            id: user.id,
+          },
 
+          data: {
+            lastSeen: new Date(),
+          },
 
+          include: {
+            role: true,
+          },
+        });
+    }
 
+    // Close previous sessions
 
-
-
-
-    const token =
-      signToken({
-
-        sub: user.id,
-
-        email: user.email
-
-      });
-
-
-
-
-
-
-
-
-    await prisma.userSession.create({
+    await prisma.userSession.updateMany({
+      where: {
+        userId: user.id,
+        isActive: true,
+      },
 
       data: {
+        isActive: false,
 
+        logoutAt: new Date(),
+      },
+    });
+
+    const token = signToken({
+      sub: user.id,
+
+      email: user.email,
+
+      role: user.role?.name,
+    });
+
+    await prisma.userSession.create({
+      data: {
         userId: user.id,
-
 
         token,
 
-
         ipAddress: ip,
 
+        userAgent,
 
-        userAgent
-
-      }
-
+        isActive: true,
+      },
     });
 
-
-
-
-
-
-
-
     return {
-
-
       token,
 
-
-      user: {
-
-
-        id: user.id,
-
-
-        email: user.email,
-
-
-        username: user.username,
-
-
-        avatarUrl: user.avatarUrl,
-
-
-        bio: user.bio,
-
-
-        isPremium: user.isPremium,
-
-
-        premiumUntil: user.premiumUntil,
-
-
-        dailyDownloadCount:
-          user.dailyDownloadCount,
-
-
-        role: user.role,
-
-
-        createdAt: user.createdAt
-
-
-      }
-
-
+      user: sanitize(user),
     };
-
-
   }
 
 

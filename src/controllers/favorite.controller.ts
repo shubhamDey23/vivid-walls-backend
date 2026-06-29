@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { favoriteService } from '../services/favorite.service';
 import { toWallpaperDTO } from '../utils/dto';
-import { sendSuccess, buildPagination } from '../utils/ApiResponse';
+import { response, buildPagination } from '../utils/ApiResponse';
 
 export const favoriteController = {
   async list(req: Request, res: Response) {
@@ -14,7 +14,7 @@ export const favoriteController = {
       limit,
       offset,
     );
-    sendSuccess(
+    response.success(
       res,
       items.map((w) => toWallpaperDTO(req, w)),
       { pagination: buildPagination(total, limit, offset, items.length) },
@@ -24,7 +24,7 @@ export const favoriteController = {
   async add(req: Request, res: Response) {
     const { wallpaperId } = req.body as { wallpaperId: string };
     await favoriteService.add(req.user!.id, wallpaperId);
-    sendSuccess(res, { wallpaperId }, { status: 201, message: 'Added to favorites' });
+    response.success(res, { wallpaperId }, { status: 201, message: 'Added to favorites' });
   },
 
   async remove(req: Request, res: Response) {
@@ -32,6 +32,6 @@ export const favoriteController = {
       req.user!.id,
       req.params.wallpaperId,
     );
-    sendSuccess(res, result, { message: 'Removed from favorites' });
+    response.success(res, result, { message: 'Removed from favorites' });
   },
 };

@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 
 import { authService } from '../services/auth.service';
-import { sendSuccess } from '../utils/ApiResponse';
+import { response } from '../utils/ApiResponse';
 
 
 export const authController = {
@@ -20,7 +20,7 @@ export const authController = {
     );
 
 
-    sendSuccess(res, result, {
+    response.success(res, result, {
       message: 'Logged in successfully'
     });
 
@@ -53,42 +53,13 @@ export const authController = {
 
 
 
-    sendSuccess(res, result, {
+    response.success(res, result, {
       message: 'Logged out successfully'
     });
 
 
   },
 
-  async register(
-    req: Request,
-    res: Response
-  ) {
-
-
-    const result =
-      await authService.register(
-
-        req.body,
-
-        req.ip,
-
-        req.headers["user-agent"]
-
-      );
-
-
-
-    sendSuccess(res, result, {
-
-      status: 201,
-
-      message: "Account created successfully"
-
-    });
-
-
-  },
 
   async google(
     req: Request,
@@ -111,7 +82,7 @@ export const authController = {
 
 
 
-    sendSuccess(res, result, {
+    response.success(res, result, {
 
       message:
         "Google login successful"
