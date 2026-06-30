@@ -42,6 +42,16 @@ router.get(
 );
 
 // ======================================================
+// TRENDING
+// GET /api/wallpapers/trending
+// ======================================================
+
+router.get(
+  "/trending",
+  asyncHandler(wallpaperController.trending)
+);
+
+// ======================================================
 // PREMIUM
 // GET /api/wallpapers/premium
 // ======================================================

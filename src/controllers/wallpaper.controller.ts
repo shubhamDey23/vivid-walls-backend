@@ -105,6 +105,20 @@ export const wallpaperController = {
     );
   },
 
+  async trending(
+    req: Request,
+    res: Response
+  ) {
+    const limit = Number(req.query.limit) || 20;
+
+    const wallpapers = await wallpaperService.getTrending(limit);
+
+    res.json({
+      success: true,
+      data: wallpapers,
+    });
+  },
+
   // ======================================================
   // PREMIUM
   // ======================================================

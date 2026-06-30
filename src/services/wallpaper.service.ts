@@ -44,11 +44,11 @@ export interface ListWallpaperParams {
   quality?: WallpaperQuality;
 
   sort?:
-    | "latest"
-    | "popular"
-    | "downloads"
-    | "likes"
-    | "featured";
+  | "latest"
+  | "popular"
+  | "downloads"
+  | "likes"
+  | "featured";
 }
 
 export interface CreateWallpaperInput {
@@ -616,6 +616,32 @@ export const wallpaperService = {
     return wallpapers.map(
       mapWallpaper
     );
+  },
+
+  async getTrending(limit = 20) {
+    return prisma.wallpaper.findMany({
+      where: {
+        active: true,
+      },
+
+      include: {
+        category: true,
+      },
+
+      orderBy: [
+        {
+          downloadCount: "desc",
+        },
+        {
+          likes: "desc",
+        },
+        {
+          createdAt: "desc",
+        },
+      ],
+
+      take: limit,
+    });
   },
 
   async getPremium(limit = 20) {
