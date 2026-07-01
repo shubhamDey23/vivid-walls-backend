@@ -43,39 +43,23 @@ export const categoryListQuery = z.object({
 // ======================================
 
 export const createCategoryBody = z.object({
-    name: z
-        .string()
-        .trim()
-        .min(2, "Category name is required")
-        .max(100),
+    name: z.string().trim().min(2).max(100),
 
-    slug: z
-        .string()
-        .trim()
-        .max(100)
-        .optional(),
+    slug: z.string().trim().max(100).optional(),
 
-    icon: z
-        .string()
-        .trim()
-        .max(100)
-        .optional(),
+    icon: z.string().trim().max(100).optional(),
 
-    description: z
-        .string()
-        .trim()
-        .max(500)
-        .optional(),
+    description: z.string().trim().max(500).optional(),
 
-    active: z.coerce
-        .boolean()
-        .default(true),
+    thumbnailUrl: z.string().trim().optional(),
 
-    sortOrder: z.coerce
-        .number()
-        .int()
-        .min(0)
-        .default(0),
+    coverImage: z.string().trim().optional(),
+
+    folderName: z.string().trim().optional(),
+
+    active: z.coerce.boolean().default(true),
+
+    sortOrder: z.coerce.number().int().min(0).default(0),
 });
 
 // ======================================
@@ -83,40 +67,21 @@ export const createCategoryBody = z.object({
 // ======================================
 
 export const updateCategoryBody = z.object({
-    name: z
-        .string()
-        .trim()
-        .min(2)
-        .max(100)
-        .optional(),
+    name: z.string().trim().min(2).max(100).optional(),
 
-    slug: z
-        .string()
-        .trim()
-        .max(100)
-        .optional(),
+    slug: z.string().trim().max(100).optional(),
 
-    icon: z
-        .string()
-        .trim()
-        .max(100)
-        .optional(),
+    icon: z.string().trim().max(100).optional(),
 
-    description: z
-        .string()
-        .trim()
-        .max(500)
-        .optional(),
+    description: z.string().trim().max(500).optional(),
 
-    active: z.coerce
-        .boolean()
-        .optional(),
+    thumbnailUrl: z.string().trim().optional(),
 
-    sortOrder: z.coerce
-        .number()
-        .int()
-        .min(0)
-        .optional(),
+    coverImage: z.string().trim().optional(),
+
+    active: z.coerce.boolean().optional(),
+
+    sortOrder: z.coerce.number().int().min(0).optional(),
 });
 
 // ======================================

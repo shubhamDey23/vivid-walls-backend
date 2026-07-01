@@ -4,6 +4,9 @@ import prisma from "../config/prisma";
 
 import { ApiError } from "../utils/ApiError";
 
+import path from "path";
+import { Storage } from "../utils/storage";
+
 import {
   createCategoryFolders,
   getWallpaperPaths,
@@ -497,7 +500,7 @@ async function deleteWallpaperFiles(
     files.map(async (file) => {
       try {
         await fs.unlink(
-          file.replace(/^\//, "")
+          path.join(Storage.root, file)
         );
       } catch {
         // Ignore missing files
@@ -791,38 +794,50 @@ export const wallpaperService = {
     file: Express.Multer.File,
     data: CreateWallpaperInput
   ) {
-    const category = await getCategory(
-      data.categoryId
+    const category = await getCategory(data.categoryId);
+
+    const slug = await generateUniqueSlug(
+      "wallpaper",
+      data.title
     );
 
-    const slug =
-      await generateUniqueSlug(
-        "wallpaper",
-        data.title
-      );
+    createCategoryFolders(category.folderName);
 
-    createCategoryFolders(
-      category.folderName
-    );
+    // ----------------------------------
+    // File names
+    // ----------------------------------
 
-    const fileName = randomFileName(
-      "webp"
-    );
+    const originalExtension = path
+      .extname(file.originalname)
+      .replace(".", "")
+      .toLowerCase();
+
+    const originalFileName =
+      randomFileName(originalExtension);
+
+    const processedFileName =
+      randomFileName("webp");
+
+    // ----------------------------------
+    // Storage paths
+    // ----------------------------------
 
     const paths = getWallpaperPaths(
       category.folderName,
-      fileName
+      originalFileName,
+      processedFileName
     );
 
-    moveFile(
-      file.path,
+    // Move uploaded file to originals
+    moveFile(file.path, paths.original);
+
+    // ----------------------------------
+    // Duplicate check
+    // ----------------------------------
+
+    const checksum = await generateChecksum(
       paths.original
     );
-
-    const checksum =
-      await generateChecksum(
-        paths.original
-      );
 
     const duplicate =
       await prisma.wallpaper.findUnique({
@@ -837,12 +852,15 @@ export const wallpaperService = {
       );
     }
 
-    const image =
-      await processWallpaper(
-        paths.original,
-        paths.display,
-        paths.thumbnail
-      );
+    // ----------------------------------
+    // Generate display + thumbnail
+    // ----------------------------------
+
+    const image = await processWallpaper(
+      paths.original,
+      paths.display,
+      paths.thumbnail
+    );
 
     const searchableText =
       buildSearchableText(
@@ -852,106 +870,98 @@ export const wallpaperService = {
         data.tags
       );
 
+    // ----------------------------------
+    // Save wallpaper
+    // ----------------------------------
+
     const wallpaper =
       await prisma.wallpaper.create({
         data: createWallpaperData(
           data,
           slug,
           {
-            originalPath:
-              paths.original,
+            originalPath: paths.originalDb,
 
-            displayPath:
-              paths.display,
+            displayPath: paths.displayDb,
 
-            thumbnailPath:
-              paths.thumbnail,
+            thumbnailPath: paths.thumbnailDb,
 
-            originalName:
-              file.originalname,
+            originalName: file.originalname,
 
-            fileName,
+            // Stored filename
+            fileName: originalFileName,
 
-            mimeType:
-              "image/webp",
+            mimeType: file.mimetype,
 
-            extension:
-              "webp",
+            extension: originalExtension,
 
-            width:
-              image.width,
+            width: image.width,
 
-            height:
-              image.height,
+            height: image.height,
 
-            aspectRatio:
-              image.aspectRatio,
+            aspectRatio: image.aspectRatio,
 
-            originalSize:
-              image.originalSize,
+            originalSize: image.originalSize,
 
-            displaySize:
-              image.displaySize,
+            displaySize: image.displaySize,
 
-            thumbnailSize:
-              image.thumbnailSize,
+            thumbnailSize: image.thumbnailSize,
 
             checksum,
 
-            blurHash:
-              image.blurHash,
+            blurHash: image.blurHash,
 
-            dominantColor:
-              image.dominantColor,
+            dominantColor: image.dominantColor,
           },
           searchableText
         ),
 
-        include:
-          wallpaperInclude,
+        include: wallpaperInclude,
       });
+
+    // ----------------------------------
+    // Create variants
+    // ----------------------------------
 
     await createWallpaperVariants(
       wallpaper.id,
       {
-        originalPath:
-          wallpaper.originalPath,
+        originalPath: paths.originalDb,
 
-        displayPath:
-          wallpaper.displayPath,
+        displayPath: paths.displayDb,
 
-        thumbnailPath:
-          wallpaper.thumbnailPath,
+        thumbnailPath: paths.thumbnailDb,
 
-        width:
-          wallpaper.width,
+        width: wallpaper.width,
 
-        height:
-          wallpaper.height,
+        height: wallpaper.height,
 
-        originalSize:
-          wallpaper.originalSize,
+        originalSize: wallpaper.originalSize,
 
-        displaySize:
-          wallpaper.displaySize,
+        displaySize: wallpaper.displaySize,
 
-        thumbnailSize:
-          wallpaper.thumbnailSize,
+        thumbnailSize: wallpaper.thumbnailSize,
       }
     );
+
+    // ----------------------------------
+    // Tags
+    // ----------------------------------
 
     await syncWallpaperTags(
       wallpaper.id,
       data.tags
     );
 
+    // ----------------------------------
+    // Category Count
+    // ----------------------------------
+
     await incrementCategoryCount(
       category.id
     );
 
-    return mapWallpaper(
-      wallpaper
-    );
+    return mapWallpaper(wallpaper);
   },
 
   async createMany(
@@ -982,7 +992,7 @@ export const wallpaperService = {
             description:
               body
                 .descriptions?.[
-                i
+              i
               ] ?? null,
 
             categoryId:

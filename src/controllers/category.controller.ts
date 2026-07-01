@@ -6,17 +6,6 @@ import { toCategoryDTO } from "../utils/dto";
 
 import { response } from "../utils/ApiResponse";
 
-// ======================================
-// HELPERS
-// ======================================
-
-const getUploadedThumbnailPath = (
-  req: Request
-) => {
-  if (!req.file) return null;
-
-  return `/uploads/temp/${req.file.filename}`;
-};
 
 // ======================================
 // CONTROLLER
@@ -70,7 +59,7 @@ export const categoryController = {
     res: Response
   ) {
     const thumbnailUrl =
-      getUploadedThumbnailPath(req) ??
+
       req.body.thumbnailUrl ??
       null;
 
@@ -116,7 +105,7 @@ export const categoryController = {
     res: Response
   ) {
     const thumbnailUrl =
-      getUploadedThumbnailPath(req) ??
+
       req.body.thumbnailUrl;
 
     const category =

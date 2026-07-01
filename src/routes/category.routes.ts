@@ -8,6 +8,8 @@ import { asyncHandler } from "../utils/asyncHandler";
 
 import { upload } from "../middlewares/upload.middleware";
 
+import { compressCategoryThumbnail } from "../middlewares/categoryThumbnail.middleware";
+
 import {
   categorySlugParams,
   categoryListQuery,
@@ -48,6 +50,7 @@ router.get(
 router.post(
   "/",
   upload.single("thumbnail"),
+  compressCategoryThumbnail,
   validate({
     body: createCategoryBody,
   }),
@@ -58,6 +61,7 @@ router.post(
 router.put(
   "/:slug",
   upload.single("thumbnail"),
+  compressCategoryThumbnail,
   validate({
     params: categorySlugParams,
     body: updateCategoryBody,
@@ -69,6 +73,7 @@ router.put(
 router.patch(
   "/:slug",
   upload.single("thumbnail"),
+  compressCategoryThumbnail,
   validate({
     params: categorySlugParams,
     body: updateCategoryBody,

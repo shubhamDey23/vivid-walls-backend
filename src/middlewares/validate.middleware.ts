@@ -13,7 +13,12 @@ export const validate =
     (req: Request, _res: Response, next: NextFunction) => {
       try {
         if (schemas.body) {
-          req.body = schemas.body.parse(req.body);
+          const parsed = schemas.body.parse(req.body);
+
+          req.body = {
+            ...req.body,
+            ...parsed,
+          };
         }
 
         if (schemas.query) {

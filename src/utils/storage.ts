@@ -149,27 +149,57 @@ export const getFileSize = (
 };
 
 /**
- * Returns all physical paths of a wallpaper.
+ * Returns filesystem paths + database relative paths.
+ */
+/**
+ * Returns filesystem paths + database relative paths.
  */
 export const getWallpaperPaths = (
     categoryFolder: string,
-    fileName: string,
+    originalFileName: string,
+    processedFileName: string,
 ) => ({
+    // ==========================
+    // Physical paths
+    // ==========================
+
     original: path.join(
         Storage.originals,
         categoryFolder,
-        fileName,
+        originalFileName,
     ),
 
     display: path.join(
         Storage.display,
         categoryFolder,
-        fileName,
+        processedFileName,
     ),
 
     thumbnail: path.join(
         Storage.thumbnails,
         categoryFolder,
-        fileName,
+        processedFileName,
+    ),
+
+    // ==========================
+    // Database paths
+    // ==========================
+
+    originalDb: path.posix.join(
+        "originals",
+        categoryFolder,
+        originalFileName,
+    ),
+
+    displayDb: path.posix.join(
+        "display",
+        categoryFolder,
+        processedFileName,
+    ),
+
+    thumbnailDb: path.posix.join(
+        "thumbnails",
+        categoryFolder,
+        processedFileName,
     ),
 });

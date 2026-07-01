@@ -40,18 +40,15 @@ export const processWallpaper = async (
     displayPath: string,
     thumbnailPath: string
 ): Promise<ImageProcessResult> => {
+
     const metadata = await sharp(originalPath).metadata();
 
     const width = metadata.width || 0;
     const height = metadata.height || 0;
 
-    const aspectRatio =
-        Number((width / height).toFixed(4));
+    const aspectRatio = Number((width / height).toFixed(4));
 
-    // -----------------------------
     // Display Image
-    // -----------------------------
-
     await sharp(originalPath)
         .resize({
             width: 1440,
@@ -62,10 +59,7 @@ export const processWallpaper = async (
         })
         .toFile(displayPath);
 
-    // -----------------------------
     // Thumbnail
-    // -----------------------------
-
     await sharp(originalPath)
         .resize({
             width: 400,
@@ -76,32 +70,9 @@ export const processWallpaper = async (
         })
         .toFile(thumbnailPath);
 
-    // -----------------------------
-    // Convert Original to WEBP
-    // (keeps original resolution)
-    // -----------------------------
-
-    await sharp(originalPath)
-        .webp({
-            quality: 95,
-        })
-        .toFile(originalPath + ".webp");
-
-    fs.unlinkSync(originalPath);
-
-    fs.renameSync(
-        originalPath + ".webp",
-        originalPath
-    );
-
-    const originalStats =
-        fs.statSync(originalPath);
-
-    const displayStats =
-        fs.statSync(displayPath);
-
-    const thumbStats =
-        fs.statSync(thumbnailPath);
+    const originalStats = fs.statSync(originalPath);
+    const displayStats = fs.statSync(displayPath);
+    const thumbStats = fs.statSync(thumbnailPath);
 
     const dominantColor =
         await getDominantColor(originalPath);
@@ -116,7 +87,8 @@ export const processWallpaper = async (
 
         resolution: `${width}x${height}`,
 
-        format: "webp",
+        // Preserve the uploaded format
+        format: metadata.format ?? "unknown",
 
         originalSize: originalStats.size,
         displaySize: displayStats.size,

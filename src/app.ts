@@ -108,7 +108,10 @@ app.use(
 );
 
 
-
+app.use(
+  "/storage",
+  express.static(path.join(process.cwd(), "storage"))
+);
 
 
 
