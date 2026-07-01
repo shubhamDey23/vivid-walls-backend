@@ -1,5 +1,73 @@
 import { z } from "zod";
+
 import { WallpaperQuality } from "@prisma/client";
+
+// ======================================
+// BOOLEAN HELPERS
+// ======================================
+
+function parseBooleanInput(
+  value: unknown
+): boolean | undefined {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return undefined;
+  }
+
+  if (Array.isArray(value)) {
+    return parseBooleanInput(value[0]);
+  }
+
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+
+  if (
+    normalized === "true" ||
+    normalized === "1" ||
+    normalized === "yes" ||
+    normalized === "on"
+  ) {
+    return true;
+  }
+
+  if (
+    normalized === "false" ||
+    normalized === "0" ||
+    normalized === "no" ||
+    normalized === "off"
+  ) {
+    return false;
+  }
+
+  return undefined;
+}
+
+const optionalBoolean = z.preprocess(
+  parseBooleanInput,
+  z.boolean().optional()
+);
+
+const requiredBoolean = z.preprocess(
+  parseBooleanInput,
+  z.boolean()
+);
+
+const defaultFalseBoolean = z.preprocess(
+  (value) => {
+    const parsed = parseBooleanInput(value);
+
+    return parsed === undefined
+      ? false
+      : parsed;
+  },
+  z.boolean()
+);
 
 // ======================================
 // PARAMS
@@ -35,11 +103,11 @@ export const wallpaperListQuery = z.object({
 
   category: z.string().trim().optional(),
 
-  featured: z.coerce.boolean().optional(),
+  featured: optionalBoolean,
 
-  premium: z.coerce.boolean().optional(),
+  premium: optionalBoolean,
 
-  active: z.coerce.boolean().optional(),
+  active: optionalBoolean,
 
   quality: z.nativeEnum(WallpaperQuality).optional(),
 
@@ -83,13 +151,9 @@ export const createWallpaperBody = z.object({
     .nativeEnum(WallpaperQuality)
     .default(WallpaperQuality.UHD_4K),
 
-  isPremium: z.coerce
-    .boolean()
-    .default(false),
+  isPremium: defaultFalseBoolean,
 
-  isFeatured: z.coerce
-    .boolean()
-    .default(false),
+  isFeatured: defaultFalseBoolean,
 
   featuredOrder: z.coerce
     .number()
@@ -133,13 +197,9 @@ export const updateWallpaperBody = z.object({
     .nativeEnum(WallpaperQuality)
     .optional(),
 
-  isPremium: z.coerce
-    .boolean()
-    .optional(),
+  isPremium: optionalBoolean,
 
-  isFeatured: z.coerce
-    .boolean()
-    .optional(),
+  isFeatured: optionalBoolean,
 
   featuredOrder: z.coerce
     .number()
@@ -147,9 +207,7 @@ export const updateWallpaperBody = z.object({
     .min(0)
     .optional(),
 
-  active: z.coerce
-    .boolean()
-    .optional(),
+  active: optionalBoolean,
 
   tags: z.array(z.string()).optional(),
 });
@@ -170,7 +228,7 @@ export const updateFeaturedOrderBody = z.object({
 // ======================================
 
 export const wallpaperStatusBody = z.object({
-  active: z.coerce.boolean(),
+  active: requiredBoolean,
 });
 
 // ======================================

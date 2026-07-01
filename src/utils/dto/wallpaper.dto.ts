@@ -1,70 +1,6 @@
 import { Request } from "express";
+
 import { absoluteUrl } from "../url";
-
-
-// export type WallpaperDTOModel = {
-//     id: string;
-
-//     title: string;
-//     slug: string;
-//     description: string | null;
-
-//     originalPath: string;
-//     displayPath: string;
-//     thumbnailPath: string;
-
-//     originalName: string;
-//     fileName: string;
-//     mimeType: string;
-//     extension: string;
-
-//     width: number;
-//     height: number;
-//     aspectRatio: number;
-
-//     originalSize: number;
-//     displaySize: number;
-//     thumbnailSize: number;
-
-//     quality: string;
-//     format: string;
-
-//     isPremium: boolean;
-//     isFeatured: boolean;
-//     featuredOrder: number;
-
-//     active: boolean;
-
-//     likeCount: number;
-//     downloadCount: number;
-//     viewCount: number;
-
-//     dominantColor: string | null;
-//     blurHash: string | null;
-
-//     cacheVersion: number;
-
-//     status: string;
-
-//     createdAt: Date;
-//     updatedAt: Date;
-
-//     category?: {
-//         id: string;
-//         name: string;
-//         slug: string;
-//         thumbnailUrl: string | null;
-//     } | null;
-
-//     wallpaperVariants?: any[];
-
-//     wallpaperTags?: {
-//         tag: {
-//             id: string;
-//             name: string;
-//         };
-//     }[];
-// };
 
 export const toWallpaperDTO = (
     req: Request,
@@ -84,11 +20,39 @@ export const toWallpaperDTO = (
 
     downloadUrl: absoluteUrl(req, wallpaper.originalPath),
 
+    originalPath: wallpaper.originalPath,
+
+    displayPath: wallpaper.displayPath,
+
+    thumbnailPath: wallpaper.thumbnailPath,
+
+    originalName: wallpaper.originalName,
+
+    fileName: wallpaper.fileName,
+
+    mimeType: wallpaper.mimeType,
+
+    extension: wallpaper.extension,
+
     width: wallpaper.width,
 
     height: wallpaper.height,
 
+    resolution:
+        wallpaper.resolution ||
+        (
+            wallpaper.width && wallpaper.height
+                ? `${wallpaper.width}x${wallpaper.height}`
+                : ""
+        ),
+
     aspectRatio: wallpaper.aspectRatio,
+
+    originalSize: wallpaper.originalSize,
+
+    displaySize: wallpaper.displaySize,
+
+    thumbnailSize: wallpaper.thumbnailSize,
 
     quality: wallpaper.quality,
 
@@ -104,9 +68,15 @@ export const toWallpaperDTO = (
 
     likes: wallpaper.likeCount,
 
+    likeCount: wallpaper.likeCount,
+
     downloads: wallpaper.downloadCount,
 
+    downloadCount: wallpaper.downloadCount,
+
     views: wallpaper.viewCount,
+
+    viewCount: wallpaper.viewCount,
 
     dominantColor: wallpaper.dominantColor,
 
@@ -120,6 +90,8 @@ export const toWallpaperDTO = (
 
     updatedAt: wallpaper.updatedAt,
 
+    categoryId: wallpaper.categoryId,
+
     category: wallpaper.category && {
         id: wallpaper.category.id,
 
@@ -129,7 +101,7 @@ export const toWallpaperDTO = (
 
         thumbnailUrl: wallpaper.category.thumbnailUrl
             ? absoluteUrl(req, wallpaper.category.thumbnailUrl)
-            : null
+            : null,
     },
 
     tags:
@@ -151,6 +123,6 @@ export const toWallpaperDTO = (
 
             quality: v.compressionQuality,
 
-            isDefault: v.isDefault
-        })) ?? []
+            isDefault: v.isDefault,
+        })) ?? [],
 });

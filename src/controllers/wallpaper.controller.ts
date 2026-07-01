@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 
+import { WallpaperQuality } from "@prisma/client";
+
 import { wallpaperService } from "../services/wallpaper.service";
 
 import { response, buildPagination } from "../utils/ApiResponse";
@@ -8,12 +10,66 @@ import { ApiError } from "../utils/ApiError";
 
 import { toWallpaperDTO } from "../utils/dto";
 
-import { WallpaperQuality } from "@prisma/client";
+// ======================================================
+// HELPERS
+// ======================================================
 
+function parseBooleanQuery(
+  value: unknown
+): boolean | undefined {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return undefined;
+  }
 
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return parseBooleanQuery(value[0]);
+  }
+
+  const normalized = String(value).trim().toLowerCase();
+
+  if (
+    normalized === "true" ||
+    normalized === "1" ||
+    normalized === "yes" ||
+    normalized === "on"
+  ) {
+    return true;
+  }
+
+  if (
+    normalized === "false" ||
+    normalized === "0" ||
+    normalized === "no" ||
+    normalized === "off"
+  ) {
+    return false;
+  }
+
+  return undefined;
+}
+
+function parseNumberQuery(
+  value: unknown,
+  fallback: number
+): number {
+  const parsed = Number(value);
+
+  if (Number.isFinite(parsed) && parsed >= 0) {
+    return parsed;
+  }
+
+  return fallback;
+}
 
 export const wallpaperController = {
-
   // ======================================================
   // LIST
   // ======================================================
@@ -22,36 +78,34 @@ export const wallpaperController = {
     req: Request,
     res: Response
   ) {
+    const limit = parseNumberQuery(req.query.limit, 20);
 
-    console.log("request ",req.query);
-
-    const limit = Number(req.query.limit);
-    const offset = Number(req.query.offset);
+    const offset = parseNumberQuery(req.query.offset, 0);
 
     const search = req.query.search as string | undefined;
+
     const category = req.query.category as string | undefined;
 
     const premium =
-      req.query.premium as boolean | undefined;
+      parseBooleanQuery(req.query.premium);
 
     const featured =
-      req.query.featured as boolean | undefined;
+      parseBooleanQuery(req.query.featured);
 
     const active =
-      req.query.active as boolean | undefined;
-
-      console.log("Active status ",active);
+      parseBooleanQuery(req.query.active);
 
     const quality =
       req.query.quality as WallpaperQuality | undefined;
 
     const sort =
       req.query.sort as
-      | "latest"
-      | "popular"
-      | "downloads"
-      | "likes"
-      | "featured";
+        | "latest"
+        | "popular"
+        | "downloads"
+        | "likes"
+        | "featured"
+        | undefined;
 
     const { items, total } =
       await wallpaperService.list({
@@ -82,7 +136,6 @@ export const wallpaperController = {
     );
   },
 
-
   // ======================================================
   // FEATURED
   // ======================================================
@@ -92,7 +145,7 @@ export const wallpaperController = {
     res: Response
   ) {
     const limit =
-      Number(req.query.limit) || 10;
+      parseNumberQuery(req.query.limit, 10);
 
     const wallpapers =
       await wallpaperService.getFeatured(
@@ -110,13 +163,21 @@ export const wallpaperController = {
     );
   },
 
+  // ======================================================
+  // TRENDING
+  // ======================================================
+
   async trending(
     req: Request,
     res: Response
   ) {
-    const limit = Number(req.query.limit) || 20;
+    const limit =
+      parseNumberQuery(req.query.limit, 20);
 
-    const wallpapers = await wallpaperService.getTrending(limit);
+    const wallpapers =
+      await wallpaperService.getTrending(
+        limit
+      );
 
     res.json({
       success: true,
@@ -133,7 +194,7 @@ export const wallpaperController = {
     res: Response
   ) {
     const limit =
-      Number(req.query.limit) || 20;
+      parseNumberQuery(req.query.limit, 20);
 
     const wallpapers =
       await wallpaperService.getPremium(
@@ -203,8 +264,11 @@ export const wallpaperController = {
     req: Request,
     res: Response
   ) {
-    const limit = Number(req.query.limit);
-    const offset = Number(req.query.offset);
+    const limit =
+      parseNumberQuery(req.query.limit, 20);
+
+    const offset =
+      parseNumberQuery(req.query.offset, 0);
 
     const {
       category,
@@ -252,9 +316,11 @@ export const wallpaperController = {
   ) {
     const q = req.query.q as string;
 
-    const limit = Number(req.query.limit);
+    const limit =
+      parseNumberQuery(req.query.limit, 20);
 
-    const offset = Number(req.query.offset);
+    const offset =
+      parseNumberQuery(req.query.offset, 0);
 
     const {
       items,
@@ -295,7 +361,7 @@ export const wallpaperController = {
     res: Response
   ) {
     const limit =
-      Number(req.query.limit) || 10;
+      parseNumberQuery(req.query.limit, 10);
 
     const wallpapers =
       await wallpaperService.related(
@@ -374,7 +440,7 @@ export const wallpaperController = {
     response.created(
       res,
       wallpapers.map(
-        wallpaper =>
+        (wallpaper) =>
           toWallpaperDTO(
             req,
             wallpaper
