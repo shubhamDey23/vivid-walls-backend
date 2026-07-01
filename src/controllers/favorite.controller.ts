@@ -1,154 +1,86 @@
-import { Request, Response } from "express";
+import { Request, Response } from 'express';
 
-import { favoriteService } from "../services/favorite.service";
+import { favoriteService } from '../services/favorite.service';
 
-import { toWallpaperDTO } from "../utils/dto";
+import { toWallpaperDTO } from '../utils/dto';
 
-import {
-  response,
-  buildPagination,
-} from "../utils/ApiResponse";
+import { response, buildPagination } from '../utils/ApiResponse';
 
 export const favoriteController = {
-  // =====================================
-  // LIST FAVORITES
-  // =====================================
+  async list(req: Request, res: Response) {
+    const { limit, offset } = req.query as unknown as {
+      limit: number;
+      offset: number;
+    };
 
-  async list(
-    req: Request,
-    res: Response
-  ) {
-    const { limit, offset } =
-      req.query as unknown as {
-        limit: number;
-        offset: number;
-      };
-
-    const { items, total } =
-      await favoriteService.list(
-        req.user!.id,
-        limit,
-        offset
-      );
+    const { items, total } = await favoriteService.list(
+      req.user!.id,
+      limit,
+      offset,
+    );
 
     response.success(
       res,
-      items.map((wallpaper) =>
-        toWallpaperDTO(
-          req,
-          wallpaper
-        )
-      ),
+      items.map(wallpaper => ({
+        ...toWallpaperDTO(req, wallpaper),
+        isFavorite: true,
+      })),
       {
-        pagination:
-          buildPagination(
-            total,
-            limit,
-            offset,
-            items.length
-          ),
-      }
+        pagination: buildPagination(total, limit, offset, items.length),
+      },
     );
   },
 
-  // =====================================
-  // ADD FAVORITE
-  // =====================================
+  async add(req: Request, res: Response) {
+    const { wallpaperId } = req.body as {
+      wallpaperId: string;
+    };
 
-  async add(
-    req: Request,
-    res: Response
-  ) {
-    const { wallpaperId } =
-      req.body as {
-        wallpaperId: string;
-      };
-
-    await favoriteService.add(
-      req.user!.id,
-      wallpaperId
-    );
+    const result = await favoriteService.add(req.user!.id, wallpaperId);
 
     response.success(
       res,
       {
         wallpaperId,
+        ...result,
       },
       {
         status: 201,
-        message:
-          "Added to favorites",
-      }
+        message: 'Added to favorites',
+      },
     );
   },
 
-  // =====================================
-  // REMOVE FAVORITE
-  // =====================================
-
-  async remove(
-    req: Request,
-    res: Response
-  ) {
-    const result =
-      await favoriteService.remove(
-        req.user!.id,
-        req.params.wallpaperId
-      );
-
-    response.success(
-      res,
-      result,
-      {
-        message:
-          "Removed from favorites",
-      }
+  async remove(req: Request, res: Response) {
+    const result = await favoriteService.remove(
+      req.user!.id,
+      req.params.wallpaperId,
     );
+
+    response.success(res, result, {
+      message: 'Removed from favorites',
+    });
   },
 
-  // =====================================
-  // TOGGLE FAVORITE
-  // =====================================
-
-  async toggle(
-    req: Request,
-    res: Response
-  ) {
-    const result =
-      await favoriteService.toggle(
-        req.user!.id,
-        req.params.wallpaperId
-      );
-
-    response.success(
-      res,
-      result,
-      {
-        message:
-          result.favorite
-            ? "Added to favorites"
-            : "Removed from favorites",
-      }
+  async toggle(req: Request, res: Response) {
+    const result = await favoriteService.toggle(
+      req.user!.id,
+      req.params.wallpaperId,
     );
+
+    response.success(res, result, {
+      message: result.favorite
+        ? 'Added to favorites'
+        : 'Removed from favorites',
+    });
   },
 
-  // =====================================
-  // FAVORITE STATUS
-  // =====================================
-
-  async status(
-    req: Request,
-    res: Response
-  ) {
-    const result =
-      await favoriteService.isFavorite(
-        req.user!.id,
-        req.params.wallpaperId
-      );
-
-    response.success(
-      res,
-      result
+  async status(req: Request, res: Response) {
+    const result = await favoriteService.isFavorite(
+      req.user!.id,
+      req.params.wallpaperId,
     );
+
+    response.success(res, result);
   },
 };

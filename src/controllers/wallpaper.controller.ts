@@ -179,10 +179,15 @@ export const wallpaperController = {
         limit
       );
 
-    res.json({
-      success: true,
-      data: wallpapers,
-    });
+    response.success(
+      res,
+      wallpapers.map((wallpaper) =>
+        toWallpaperDTO(
+          req,
+          wallpaper
+        )
+      )
+    );
   },
 
   // ======================================================

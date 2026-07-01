@@ -52,6 +52,20 @@ router.get(
 );
 
 // ======================================================
+// TOP WEEK
+// GET /api/wallpapers/top-week
+//
+// Important:
+// This route must stay above "/:id".
+// For now it uses trending logic as a safe fallback.
+// ======================================================
+
+router.get(
+  "/top-week",
+  asyncHandler(wallpaperController.trending)
+);
+
+// ======================================================
 // PREMIUM
 // GET /api/wallpapers/premium
 // ======================================================
@@ -64,6 +78,9 @@ router.get(
 // ======================================================
 // SEARCH
 // GET /api/wallpapers/search
+//
+// Important:
+// This route must stay above "/:id".
 // ======================================================
 
 router.get(
@@ -77,6 +94,9 @@ router.get(
 // ======================================================
 // CATEGORY WALLPAPERS
 // GET /api/wallpapers/category/:slug
+//
+// Important:
+// This route must stay above "/:id".
 // ======================================================
 
 router.get(
@@ -91,6 +111,9 @@ router.get(
 // ======================================================
 // GET BY SLUG
 // GET /api/wallpapers/slug/:slug
+//
+// Important:
+// This route must stay above "/:id".
 // ======================================================
 
 router.get(
@@ -99,19 +122,6 @@ router.get(
     params: wallpaperSlugParams,
   }),
   asyncHandler(wallpaperController.getBySlug)
-);
-
-// ======================================================
-// GET BY ID
-// GET /api/wallpapers/:id
-// ======================================================
-
-router.get(
-  "/:id",
-  validate({
-    params: wallpaperIdParams,
-  }),
-  asyncHandler(wallpaperController.getById)
 );
 
 // ======================================================
@@ -125,6 +135,28 @@ router.get(
     params: wallpaperIdParams,
   }),
   asyncHandler(wallpaperController.related)
+);
+
+// ======================================================
+// GET BY ID
+// GET /api/wallpapers/:id
+//
+// Keep this below all static routes like:
+// /featured
+// /trending
+// /top-week
+// /premium
+// /search
+// /category/:slug
+// /slug/:slug
+// ======================================================
+
+router.get(
+  "/:id",
+  validate({
+    params: wallpaperIdParams,
+  }),
+  asyncHandler(wallpaperController.getById)
 );
 
 // ======================================================

@@ -106,6 +106,12 @@ const wallpaperInclude = {
       tag: true,
     },
   },
+
+  _count: {
+    select: {
+      favorites: true,
+    },
+  },
 } satisfies Prisma.WallpaperInclude;
 
 // ======================================================
@@ -673,33 +679,36 @@ export const wallpaperService = {
   },
 
   async getTrending(limit = 20) {
-    return prisma.wallpaper.findMany({
-      where: {
-        active: true,
+    const wallpapers =
+      await prisma.wallpaper.findMany({
+        where: {
+          active: true,
 
-        deletedAt: null,
+          deletedAt: null,
 
-        status: "READY",
-      },
-
-      include: {
-        category: true,
-      },
-
-      orderBy: [
-        {
-          downloadCount: "desc",
+          status: "READY",
         },
-        {
-          likeCount: "desc",
-        },
-        {
-          createdAt: "desc",
-        },
-      ],
 
-      take: limit,
-    });
+        include: wallpaperInclude,
+
+        orderBy: [
+          {
+            downloadCount: "desc",
+          },
+          {
+            likeCount: "desc",
+          },
+          {
+            createdAt: "desc",
+          },
+        ],
+
+        take: limit,
+      });
+
+    return wallpapers.map(
+      mapWallpaper
+    );
   },
 
   async getPremium(limit = 20) {

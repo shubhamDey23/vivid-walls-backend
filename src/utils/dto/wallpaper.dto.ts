@@ -74,6 +74,21 @@ export const toWallpaperDTO = (
 
     downloadCount: wallpaper.downloadCount,
 
+    favoriteCount:
+        wallpaper.favoriteCount ??
+        wallpaper._count?.favorites ??
+        0,
+
+    favoritesCount:
+        wallpaper.favoriteCount ??
+        wallpaper._count?.favorites ??
+        0,
+
+    isFavorite:
+        wallpaper.isFavorite ??
+        wallpaper.favorite ??
+        false,
+
     views: wallpaper.viewCount,
 
     viewCount: wallpaper.viewCount,
