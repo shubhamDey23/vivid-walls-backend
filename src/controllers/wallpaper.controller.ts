@@ -22,6 +22,9 @@ export const wallpaperController = {
     req: Request,
     res: Response
   ) {
+
+    console.log("request ",req.query);
+
     const limit = Number(req.query.limit);
     const offset = Number(req.query.offset);
 
@@ -36,6 +39,8 @@ export const wallpaperController = {
 
     const active =
       req.query.active as boolean | undefined;
+
+      console.log("Active status ",active);
 
     const quality =
       req.query.quality as WallpaperQuality | undefined;
