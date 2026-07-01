@@ -4,6 +4,8 @@ import prisma from "../config/prisma";
 
 import { ApiError } from "../utils/ApiError";
 
+import { createCategoryFolders } from "../utils/storage";
+
 import {
   generateSlug,
   generateUniqueSlug,
@@ -209,6 +211,8 @@ export const categoryService = {
     const folderName =
       data.folderName ??
       slug.replace(/-/g, "_");
+
+    createCategoryFolders(folderName);
 
     const category =
       await prisma.category.create({

@@ -4,7 +4,6 @@ import prisma from "../config/prisma";
 
 import { ApiError } from "../utils/ApiError";
 
-
 import {
   createCategoryFolders,
   getWallpaperPaths,
@@ -21,10 +20,11 @@ import {
   generateUniqueSlug,
 } from "../utils/slug";
 
+import fs from "fs/promises";
+
 // ======================================================
 // TYPES
 // ======================================================
-
 
 export interface ListWallpaperParams {
   limit: number;
@@ -60,15 +60,14 @@ export interface CreateWallpaperInput {
 
   quality?: WallpaperQuality;
 
-  isPremium?: boolean;
+  isPremium?: boolean | string;
 
-  isFeatured?: boolean;
+  isFeatured?: boolean | string;
 
   tags?: string[];
 }
 
 export interface UpdateWallpaperInput {
-
   title?: string;
 
   description?: string | null;
@@ -77,14 +76,13 @@ export interface UpdateWallpaperInput {
 
   quality?: WallpaperQuality;
 
-  isPremium?: boolean;
+  isPremium?: boolean | string;
 
-  isFeatured?: boolean;
+  isFeatured?: boolean | string;
 
-  active?: boolean;
+  active?: boolean | string;
 
   tags?: string[];
-
 }
 
 // ======================================================
@@ -120,8 +118,6 @@ const mapWallpaper = (
 // ======================================================
 // HELPERS
 // ======================================================
-
-
 
 async function getCategory(
   categoryId: string
@@ -197,6 +193,62 @@ async function decrementCategoryCount(
   });
 }
 
+function toBoolean(
+  value: unknown,
+  fallback = false
+): boolean {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return fallback;
+  }
+
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized =
+      value.trim().toLowerCase();
+
+    if (
+      normalized === "true" ||
+      normalized === "1" ||
+      normalized === "yes" ||
+      normalized === "on"
+    ) {
+      return true;
+    }
+
+    if (
+      normalized === "false" ||
+      normalized === "0" ||
+      normalized === "no" ||
+      normalized === "off"
+    ) {
+      return false;
+    }
+  }
+
+  return Boolean(value);
+}
+
+function toOptionalBoolean(
+  value: unknown
+): boolean | undefined {
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return undefined;
+  }
+
+  return toBoolean(value);
+}
+
 function createWallpaperData(
   data: CreateWallpaperInput,
   slug: string,
@@ -220,6 +272,12 @@ function createWallpaperData(
   },
   searchableText: string
 ): Prisma.WallpaperCreateInput {
+  const isPremium =
+    toBoolean(data.isPremium, false);
+
+  const isFeatured =
+    toBoolean(data.isFeatured, false);
+
   return {
     title: data.title.trim(),
 
@@ -273,14 +331,12 @@ function createWallpaperData(
 
     searchableText,
 
-    isPremium:
-      data.isPremium ?? false,
+    isPremium,
 
-    isFeatured:
-      data.isFeatured ?? false,
+    isFeatured,
 
     featuredAt:
-      data.isFeatured
+      isFeatured
         ? new Date()
         : null,
 
@@ -424,8 +480,6 @@ async function removeWallpaperTags(
   });
 }
 
-import fs from "fs/promises";
-
 async function deleteWallpaperFiles(
   wallpaper: {
     originalPath: string;
@@ -452,14 +506,11 @@ async function deleteWallpaperFiles(
   );
 }
 
-
-
 // ======================================================
 // SERVICE
 // ======================================================
 
 export const wallpaperService = {
-
   async list({
     limit,
     offset,
@@ -622,6 +673,10 @@ export const wallpaperService = {
     return prisma.wallpaper.findMany({
       where: {
         active: true,
+
+        deletedAt: null,
+
+        status: "READY",
       },
 
       include: {
@@ -633,7 +688,7 @@ export const wallpaperService = {
           downloadCount: "desc",
         },
         {
-          likes: "desc",
+          likeCount: "desc",
         },
         {
           createdAt: "desc",
@@ -746,13 +801,9 @@ export const wallpaperService = {
         data.title
       );
 
-    // Create storage folders
-
     createCategoryFolders(
       category.folderName
     );
-
-    // Generate filename
 
     const fileName = randomFileName(
       "webp"
@@ -763,21 +814,15 @@ export const wallpaperService = {
       fileName
     );
 
-    // Move uploaded file
-
     moveFile(
       file.path,
       paths.original
     );
 
-    // Generate checksum
-
     const checksum =
       await generateChecksum(
         paths.original
       );
-
-    // Duplicate detection
 
     const duplicate =
       await prisma.wallpaper.findUnique({
@@ -791,8 +836,6 @@ export const wallpaperService = {
         "Wallpaper already exists."
       );
     }
-
-    // Process image
 
     const image =
       await processWallpaper(
@@ -911,7 +954,6 @@ export const wallpaperService = {
     );
   },
 
-
   async createMany(
     files: Express.Multer.File[],
     body: Omit<
@@ -940,7 +982,7 @@ export const wallpaperService = {
             description:
               body
                 .descriptions?.[
-              i
+                i
               ] ?? null,
 
             categoryId:
@@ -1036,6 +1078,15 @@ export const wallpaperService = {
         tags
       );
 
+    const active =
+      toOptionalBoolean(data.active);
+
+    const isPremium =
+      toOptionalBoolean(data.isPremium);
+
+    const isFeatured =
+      toOptionalBoolean(data.isFeatured);
+
     const updateData: Prisma.WallpaperUpdateInput =
     {
       title,
@@ -1046,16 +1097,16 @@ export const wallpaperService = {
 
       quality: data.quality,
 
-      active: data.active,
+      active,
 
-      isPremium: data.isPremium,
+      isPremium,
 
-      isFeatured: data.isFeatured,
+      isFeatured,
 
       featuredAt:
-        data.isFeatured === undefined
+        isFeatured === undefined
           ? undefined
-          : data.isFeatured
+          : isFeatured
             ? new Date()
             : null,
     };
@@ -1118,8 +1169,6 @@ export const wallpaperService = {
       );
     }
 
-    // Soft delete
-
     await prisma.wallpaper.update({
       where: {
         id,
@@ -1132,8 +1181,6 @@ export const wallpaperService = {
       },
     });
 
-    // Remove physical files
-
     await deleteWallpaperFiles({
       originalPath:
         wallpaper.originalPath,
@@ -1145,23 +1192,17 @@ export const wallpaperService = {
         wallpaper.thumbnailPath,
     });
 
-    // Remove variants
-
     await prisma.wallpaperVariant.deleteMany({
       where: {
         wallpaperId: id,
       },
     });
 
-    // Remove tag mappings
-
     await prisma.wallpaperTag.deleteMany({
       where: {
         wallpaperId: id,
       },
     });
-
-    // Update category counter
 
     await decrementCategoryCount(
       wallpaper.categoryId
@@ -1288,7 +1329,6 @@ export const wallpaperService = {
   },
 
   async toggleFeatured(id: string) {
-
     const wallpaper =
       await this.getById(id);
 
@@ -1298,7 +1338,6 @@ export const wallpaperService = {
       },
 
       data: {
-
         isFeatured:
           !wallpaper.isFeatured,
 
@@ -1306,17 +1345,14 @@ export const wallpaperService = {
           wallpaper.isFeatured
             ? null
             : new Date(),
-
       },
 
       include:
         wallpaperInclude,
     });
-
   },
 
   async togglePremium(id: string) {
-
     const wallpaper =
       await this.getById(id);
 
@@ -1326,20 +1362,16 @@ export const wallpaperService = {
       },
 
       data: {
-
         isPremium:
           !wallpaper.isPremium,
-
       },
 
       include:
         wallpaperInclude,
     });
-
   },
 
   async toggleActive(id: string) {
-
     const wallpaper =
       await this.getById(id);
 
@@ -1349,76 +1381,60 @@ export const wallpaperService = {
       },
 
       data: {
-
         active:
           !wallpaper.active,
-
       },
 
       include:
         wallpaperInclude,
     });
-
   },
 
   async incrementViews(
     id: string
   ) {
-
     await prisma.wallpaper.update({
       where: {
         id,
       },
 
       data: {
-
         viewCount: {
           increment: 1,
         },
-
       },
     });
-
   },
 
   async incrementDownloads(
     id: string
   ) {
-
     await prisma.wallpaper.update({
       where: {
         id,
       },
 
       data: {
-
         downloadCount: {
           increment: 1,
         },
-
       },
     });
-
   },
 
   async refreshCacheVersion(
     id: string
   ) {
-
     await prisma.wallpaper.update({
       where: {
         id,
       },
 
       data: {
-
         cacheVersion: {
           increment: 1,
         },
-
       },
     });
-
-  }
-
-}
+  },
+};
